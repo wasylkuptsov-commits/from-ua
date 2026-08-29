@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Katalog Produktów Online - Zamawiaj Hurt & Detal</title>
+    
+    <!-- Ikony & Favicon -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Meta PWA Mobilne -->
+    <meta name="theme-color" content="#0d0f1b">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Katalog B2B">
+
+    <!-- FontAwesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Style CSS -->
+    <link rel="stylesheet" href="style.css?v=2070">
+</head>
+<body class="mode-client">
+
+    <!-- Pływający Przycisk Koszyka (Dla Telefonów i Komputerów) -->
+    <div id="floatingCartBtn" onclick="openCartModalFromHeader()" style="position: fixed; bottom: 25px; right: 25px; z-index: 99999; cursor: pointer;" title="Otwórz koszyk zamówień">
+        <div style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; width: 62px; height: 62px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.5); border: 2px solid rgba(255,255,255,0.4); position: relative; transition: transform 0.2s ease;">
+            <i class="fa-solid fa-cart-shopping" style="font-size: 22px;"></i>
+            <span id="cartCountBadge" style="position: absolute; top: -4px; right: -4px; background: #ef4444; color: #fff; font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 20px; border: 2px solid #fff;">0</span>
+        </div>
+    </div>
+
+    <div class="container">
+        
+        <!-- Nagłówek Katalogu Klienta -->
+        <header class="header-bar">
+            <div class="brand-block">
+                <div class="brand-badge">
+                    <i class="fa-solid fa-store"></i> Katalog Zamówień Online
+                </div>
+                <h1 id="appTitle">Katalog Produktów</h1>
+                <p id="appSubtitle">Wygodne zamówienia hurtowe i detaliczne</p>
+            </div>
+            
+            <div class="header-actions">
+                <button class="btn btn-cart-header" id="headerCartBtn" onclick="openCartModalFromHeader()" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-weight: 700; font-size: 13px; padding: 10px 18px; border-radius: 25px; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);">
+                    <i class="fa-solid fa-cart-shopping"></i> <span>Koszyk</span>
+                    <span id="headerCartBadge" style="background: #fff; color: #059669; padding: 2px 7px; border-radius: 12px; font-size: 11px; font-weight: 800;">0</span>
+                    <span id="headerCartTotal" style="font-size: 12px; font-weight: 800; margin-left: 2px;">0,00 zł</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- ================= WIDOK KLIENTA: KATALOG PRODUKTÓW ================= -->
+        <section id="view-client-catalog" class="view-section active">
+            <div class="catalog-hero">
+                <div class="hero-content">
+                    <h2><i class="fa-solid fa-boxes-packing"></i> Przeglądaj i Zamawiaj Towary</h2>
+                    <p>Aktualne ceny, wysokiej jakości produkty i szybka realizacja. Dodaj wybrane pozycje do koszyka i prześlij zamówienie w kilka sekund.</p>
+                </div>
+            </div>
+
+            <div class="search-wrapper">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="catalogSearchInput" class="search-input" placeholder="Szukaj po nazwie towaru, EAN lub smaku...">
+            </div>
+
+            <div class="categories-bar" id="categoriesBar">
+                <!-- Generowane dynamicznie w app.js -->
+            </div>
+            
+            <div class="subcategories-bar" id="subCategoriesBar" style="display: none;">
+                <!-- Generowane dynamicznie w app.js na podstawie wybranej kategorii -->
+            </div>
+
+            <div class="products-grid" id="catalogProductsGrid"></div>
+        </section>
+
+    </div>
+
+    <!-- ================= MODALE DLA KLIENTA ================= -->
+
+    <!-- MODAL SZCZEGÓŁÓW TOWARU (PODGLĄD DLA KLIENTA) -->
+    <div class="modal" id="productDetailsModal">
+        <div class="modal-content modal-lg" style="background: #111422; border: 1px solid rgba(255,255,255,0.12); border-radius: 20px; max-width: 750px; width: 95%;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 15px;">
+                <div class="brand-badge" id="modalProductCategoryBadge" style="font-size: 11px; margin: 0;">
+                    <i class="fa-solid fa-tag"></i> Produkt
+                </div>
+                <button class="modal-close" onclick="closeModal('productDetailsModal')" style="background: none; border: none; color: var(--text-muted); font-size: 26px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding-top: 15px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; align-items: center;">
+                    
+                    <!-- LEWA KOLUMNA: PACKSHOT HD -->
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                        <div style="width: 100%; aspect-ratio: 1/1; max-width: 320px; background: #ffffff; border-radius: 16px; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.1);">
+                            <img id="modalProductImg" src="" alt="Zdjęcie produktu" style="width: 100%; height: 100%; object-fit: contain; padding: 12px;">
+                        </div>
+                    </div>
+
+                    <!-- PRAWA KOLUMNA: DANE TOWAROWE I ZAMAWIANIE -->
+                    <div style="display: flex; flex-direction: column; gap: 14px;">
+                        <div>
+                            <h2 id="modalProductName" style="font-size: 20px; font-weight: 800; color: #fff; margin: 0 0 6px 0; line-height: 1.3;">Nazwa Produktu</h2>
+                            <div style="font-size: 12px; color: var(--text-muted); display: flex; flex-wrap: wrap; gap: 12px;">
+                                <span>Kod EAN: <strong id="modalProductEan" style="color: #c4b5fd; font-family: monospace; font-size: 13px;">-</strong></span>
+                                <span>SKU: <strong id="modalProductSku" style="color: var(--text-main); font-family: monospace;">-</strong></span>
+                                <span>Stawka VAT: <strong id="modalProductVat" style="color: #fbbf24;">-</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- PARAMETRY CENOWE I LOGISTYCZNE -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; background: rgba(0,0,0,0.25); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
+                            <div>
+                                <div style="font-size: 10px; text-transform: uppercase; color: var(--text-dim); font-weight: 700;">Cena Netto / Szt.</div>
+                                <div id="modalProductPrice" style="font-size: 22px; font-weight: 800; color: #34d399; margin-top: 2px;">0.00 zł</div>
+                                <div id="modalProductPriceGross" style="font-size: 11px; color: var(--text-dim);">brutto: 0.00 zł</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 10px; text-transform: uppercase; color: var(--text-dim); font-weight: 700;">Pakowanie Zbiorcze</div>
+                                <div id="modalProductPackInfo" style="font-size: 15px; font-weight: 700; color: #38bdf8; margin-top: 2px;">1 szt.</div>
+                                <div id="modalProductPackagePrice" style="font-size: 11px; color: #fcd34d;">-</div>
+                            </div>
+                        </div>
+
+                        <!-- AKCJE DODAWANIA DO KOSZYKA -->
+                        <div id="modalClientActions" style="display: flex; gap: 12px; align-items: center; margin-top: 10px;">
+                            <div class="quantity-picker" style="height: 46px; background: rgba(255,255,255,0.08); border-radius: 10px; display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.15);">
+                                <button class="qty-btn" id="modalQtyMinus" style="width: 38px; height: 100%; background: none; border: none; color: #fff; font-size: 18px; cursor: pointer;">-</button>
+                                <input type="number" id="modalQtyInput" value="1" min="1" max="999" style="width: 50px; text-align: center; background: transparent; border: none; color: #fff; font-size: 16px; font-weight: 700;">
+                                <button class="qty-btn" id="modalQtyPlus" style="width: 38px; height: 100%; background: none; border: none; color: #fff; font-size: 18px; cursor: pointer;">+</button>
+                            </div>
+                            <button class="btn btn-cart-add" id="modalAddToCartBtn" style="flex: 1; height: 46px; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border-radius: 10px; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(16,185,129,0.3);">
+                                <i class="fa-solid fa-cart-plus"></i> Dodaj do Koszyka
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL KOSZYKA I ZAMÓWIENIA -->
+    <div class="modal" id="cartModal">
+        <div class="modal-content modal-lg" style="max-width: 650px; width: 95%; background: #111422; border: 1px solid rgba(255,255,255,0.12); border-radius: 20px;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 15px;">
+                <h3 style="margin: 0; font-size: 18px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 10px;">
+                    <i class="fa-solid fa-cart-shopping" style="color: #10b981;"></i> Twój Koszyk Zamówień
+                </h3>
+                <button class="modal-close" onclick="closeModal('cartModal')" style="background: none; border: none; color: var(--text-muted); font-size: 26px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding-top: 15px;">
+                <div id="cartItemsList" class="cart-items-container" style="max-height: 250px; overflow-y: auto; margin-bottom: 15px;"></div>
+
+                <div class="cart-summary-box" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 12px; padding: 14px; margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 16px; font-weight: 800; color: #fff;">
+                        <span>Razem do zapłaty (Netto):</span>
+                        <strong id="cartSummaryTotal" style="color: #34d399; font-size: 22px;">0,00 zł</strong>
+                    </div>
+                </div>
+
+                <div class="checkout-form-box" style="background: rgba(0,0,0,0.25); padding: 18px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.06);">
+                    <h4 style="margin: 0 0 14px 0; font-size: 14px; font-weight: 800; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-user-pen" style="color: #38bdf8;"></i> Dane do złożenia zamówienia:
+                    </h4>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                        <div class="form-group" style="margin: 0;">
+                            <label for="checkoutName" style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Nazwa Firmy / Imię i Nazwisko *</label>
+                            <input type="text" id="checkoutName" class="form-control" placeholder="np. Sklep ABC / Jan Kowalski" required>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="checkoutPhone" style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Numer Telefonu *</label>
+                            <input type="tel" id="checkoutPhone" class="form-control" placeholder="np. 500 600 700" required>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                        <div class="form-group" style="margin: 0;">
+                            <label for="checkoutEmail" style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Adres E-mail *</label>
+                            <input type="email" id="checkoutEmail" class="form-control" placeholder="np. biuro@firma.pl" required>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="checkoutNip" style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">NIP (opcjonalnie do faktury)</label>
+                            <input type="text" id="checkoutNip" class="form-control" placeholder="np. 1234567890">
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label for="checkoutAddress" style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Adres Dostawy / Miasto *</label>
+                        <input type="text" id="checkoutAddress" class="form-control" placeholder="np. ul. Kwiatowa 5, 00-001 Warszawa" required>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 18px;">
+                        <label for="checkoutNotes" style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Uwagi do zamówienia (opcjonalnie)</label>
+                        <textarea id="checkoutNotes" class="form-control" style="height: 50px;" placeholder="np. dostawa w godzinach 8:00 - 14:00..."></textarea>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <!-- PRZYCISK GŁÓWNY: E-MAIL Z DUBLOWANIEM NA WHATSAPP -->
+                        <button class="btn" id="sendEmailAndWhatsAppOrderBtn" onclick="submitEmailAndWhatsAppOrder()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; font-weight: 800; font-size: 14px; padding: 14px; border-radius: 12px; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(16,185,129,0.4); display: flex; align-items: center; justify-content: center; gap: 10px;">
+                            <i class="fa-solid fa-paper-plane"></i> Złóż Zamówienie (E-mail + WhatsApp)
+                        </button>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <!-- PRZYCISK 2: TYLKO WHATSAPP -->
+                            <button class="btn" id="sendWhatsAppOrderBtn" onclick="submitWhatsAppOnlyOrder()" style="background: #25D366; color: #fff; font-weight: 700; font-size: 13px; padding: 11px; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                <i class="fa-brands fa-whatsapp" style="font-size: 16px;"></i> Tylko WhatsApp
+                            </button>
+
+                            <!-- PRZYCISK 3: POBIERZ ZAMÓWIENIE / DRUK PDF -->
+                            <button class="btn btn-secondary" id="downloadOrderPdfBtn" onclick="downloadOrderFileOrPrint()" style="font-size: 13px; font-weight: 700; padding: 11px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                <i class="fa-solid fa-file-arrow-down"></i> Pobierz Plik / Druk
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Skrypty aplikacji -->
+    <script src="kravets_catalog_data.js?v=2070"></script>
+    <script src="kraft_catalog_data.js?v=2070"></script>
+    <script src="database.js?v=2070"></script>
+    <script src="app.js?v=2070"></script>
+    <script>
+        if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(reg => console.log('[PWA] Service Worker zarejestrowany:', reg.scope))
+                    .catch(err => console.log('[PWA] Service Worker info:', err));
+            });
+        }
+    </script>
+</body>
+</html>

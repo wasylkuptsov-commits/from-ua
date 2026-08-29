@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔄 RESET PAMIĘCI APLIKACJI</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #0d0f1b;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .card {
+            background: #1a1d2e;
+            border: 1px solid #2d3250;
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 560px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 { font-size: 24px; color: #f1f5f9; margin-bottom: 8px; }
+        .subtitle { color: #94a3b8; font-size: 14px; margin-bottom: 30px; line-height: 1.5; }
+        .status-box {
+            background: #0f1320;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 24px;
+            min-height: 120px;
+            text-align: left;
+            font-size: 13px;
+            font-family: monospace;
+            overflow-y: auto;
+            max-height: 280px;
+        }
+        .log-line { margin-bottom: 4px; }
+        .log-ok { color: #34d399; }
+        .log-del { color: #f87171; }
+        .log-info { color: #94a3b8; }
+        .log-warn { color: #fbbf24; }
+        button {
+            background: #ef4444;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 14px 32px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 12px;
+            transition: background 0.2s;
+        }
+        button:hover { background: #dc2626; }
+        button:disabled { background: #4b5563; cursor: not-allowed; }
+        .btn-go {
+            background: #10b981;
+            margin-bottom: 0;
+        }
+        .btn-go:hover { background: #059669; }
+        .btn-go:disabled { background: #4b5563; }
+        .count-badge {
+            display: inline-block;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 6px 14px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>🔄 Reset Pamięci Aplikacji</h1>
+    <p class="subtitle">
+        To narzędzie czyści całą pamięć podręczną (localStorage) aplikacji "Porównywarka Cen".<br>
+        <strong>Użyj raz</strong> — po czym wróć do głównej strony i zrób import od nowa.
+    </p>
+
+    <div class="count-badge" id="countBadge">Znaleziono kluczy localStorage: <strong id="keyCount">—</strong></div>
+
+    <div class="status-box" id="statusBox">
+        <div class="log-line log-info">Kliknij "WYCZYŚĆ WSZYSTKO" aby rozpocząć...</div>
+    </div>
+
+    <button id="btnReset" onclick="doReset()">🗑️ WYCZYŚĆ CAŁĄ PAMIĘĆ</button>
+    <button class="btn-go" id="btnGo" disabled onclick="goToApp()">✅ GOTOWE — Otwórz Aplikację</button>
+</div>
+
+<script>
+    function log(msg, cls) {
+        const box = document.getElementById('statusBox');
+        const line = document.createElement('div');
+        line.className = 'log-line ' + (cls || 'log-info');
+        line.textContent = msg;
+        box.appendChild(line);
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function updateCount() {
+        const keys = Object.keys(localStorage).filter(k =>
+            k.startsWith('porownywarka_') ||
+            k.startsWith('katalog_') ||
+            k.startsWith('b2b_') ||
+            k.includes('supplier') ||
+            k.includes('product') ||
+            k.includes('preset') ||
+            k.includes('packaging') ||
+            k.includes('pattern') ||
+            k.includes('memory') ||
+            k.includes('snapshot') ||
+            k.includes('margin') ||
+            k.includes('draft') ||
+            k.includes('order')
+        );
+        document.getElementById('keyCount').textContent = keys.length;
+        return keys;
+    }
+
+    updateCount();
+
+    function doReset() {
+        document.getElementById('btnReset').disabled = true;
+        document.getElementById('statusBox').innerHTML = '';
+
+        log('🔍 Skanowanie pamięci przeglądarki...', 'log-info');
+
+        // Zbieramy WSZYSTKIE klucze aplikacji
+        const appKeys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key) appKeys.push(key);
+        }
+
+        log(`📦 Znaleziono ${appKeys.length} kluczy łącznie w localStorage.`, 'log-info');
+
+        // Lista kluczy aplikacji do usunięcia
+        const toDelete = appKeys.filter(k =>
+            k.startsWith('porownywarka_') ||
+            k.startsWith('katalog_') ||
+            k.startsWith('b2b_')
+        );
+
+        // Usuwamy wszystkie klucze aplikacji
+        let deletedCount = 0;
+        for (const key of toDelete) {
+            log(`   🗑 Usuwam: ${key}`, 'log-del');
+            localStorage.removeItem(key);
+            deletedCount++;
+        }
+
+        // Dodatkowe klucze powiązane
+        const extraKeys = ['importMapping', 'pim_last_filter', 'catalogView_scroll'];
+        for (const key of extraKeys) {
+            if (localStorage.getItem(key) !== null) {
+                localStorage.removeItem(key);
+                log(`   🗑 Usuwam dodatkowy: ${key}`, 'log-del');
+                deletedCount++;
+            }
+        }
+
+        // Czyszczenie Service Workerów
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(regs => {
+                if (regs.length > 0) {
+                    regs.forEach(r => r.unregister());
+                    log(`✅ Wyrejestrowano ${regs.length} Service Worker(ów) PWA.`, 'log-ok');
+                } else {
+                    log('ℹ️ Brak aktywnych Service Workerów.', 'log-info');
+                }
+            }).catch(() => {});
+        }
+
+        // Czyszczenie cache przeglądarki
+        if (typeof caches !== 'undefined') {
+            caches.keys().then(names => {
+                if (names.length > 0) {
+                    names.forEach(n => caches.delete(n));
+                    log(`✅ Usunięto ${names.length} pamięci cache (PWA/offline).`, 'log-ok');
+                } else {
+                    log('ℹ️ Brak pamięci cache do wyczyszczenia.', 'log-info');
+                }
+            }).catch(() => {});
+        }
+
+        const remaining = updateCount();
+
+        setTimeout(() => {
+            log('', '');
+            if (deletedCount === 0) {
+                log('⚠️ Pamięć była już pusta — nic do usunięcia.', 'log-warn');
+            } else {
+                log(`✅ Usunięto ${deletedCount} kluczy pamięci aplikacji.`, 'log-ok');
+            }
+            log(`📊 Pozostałe klucze w localStorage: ${remaining.length}`, 'log-info');
+            log('', '');
+            log('🎉 GOTOWE! Możesz teraz wrócić do aplikacji i wykonać import od nowa.', 'log-ok');
+            document.getElementById('btnGo').disabled = false;
+        }, 600);
+    }
+
+    function goToApp() {
+        window.location.href = 'index.html';
+    }
+</script>
+</body>
+</html>

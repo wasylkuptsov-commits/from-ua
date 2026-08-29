@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body>
+    <script src="database.js"></script>
+    <script src="parser.js"></script>
+    <script src="scraper.js"></script>
+    <script>
+        fetch('dump.html')
+            .then(res => res.text())
+            .then(html => {
+                let logs = [];
+                const origConsoleLog = console.log;
+                console.log = (...args) => { logs.push(args.join(' ')); origConsoleLog(...args); };
+                console.warn = (...args) => { logs.push("WARN: " + args.join(' ')); };
+
+                try {
+                    Database.saveProducts([]);
+                    const count = Scraper.parsePastedText(html, "Test Supplier");
+                    logs.push("IMPORTED COUNT: " + count);
+                    logs.push("PRODUCTS IN DB: " + JSON.stringify(Database.getProducts(), null, 2));
+                } catch(e) {
+                    logs.push("ERROR: " + e.message);
+                    logs.push(e.stack);
+                }
+
+                fetch('http://localhost:8080/debug-paste', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({text: logs.join('\n\n')})
+                });
+            });
+    </script>
+</body>
+</html>

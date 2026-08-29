@@ -1,0 +1,1 @@
+﻿Add-Type -AssemblyName System.Windows.Forms; $clip = [System.Windows.Forms.Clipboard]::GetText([System.Windows.Forms.TextDataFormat]::Html); if (-not $clip) { $clip = [System.Windows.Forms.Clipboard]::GetText() }; Set-Content -Path .\cart_dump.html -Value $clip -Encoding UTF8

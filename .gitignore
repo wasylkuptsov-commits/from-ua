@@ -1,0 +1,7 @@
+# Scratch and logs
+scratch/
+backups/
+*.log
+.DS_Store
+Thumbs.db
+node_modules/

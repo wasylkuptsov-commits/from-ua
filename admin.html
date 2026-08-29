@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Panel Właściciela - Centrala PIM & Porównywarka Cen</title>
+    
+    <!-- Ikony & Favicon -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Meta PWA -->
+    <meta name="theme-color" content="#0d0f1b">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Panel PIM">
+
+    <!-- FontAwesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Style CSS -->
+    <link rel="stylesheet" href="style.css?v=2070">
+    
+    <!-- SheetJS Excel Parser -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- PDF.js Parser -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+</head>
+<body class="mode-admin" style="padding-bottom: 90px;">
+
+    <!-- ================= EKRAN BLOKADY PIN DLA WŁAŚCICIELA ================= -->
+    <div id="adminPinLockScreen" style="position: fixed; inset: 0; background: radial-gradient(circle at 50% 30%, #1e1b4b 0%, #0d0f1b 70%, #05060b 100%); z-index: 9999999; display: flex; align-items: center; justify-content: center; padding: 20px;">
+        <div style="background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8); border-radius: 24px; padding: 35px 30px; max-width: 400px; width: 100%; text-align: center; color: #fff;">
+            
+            <div style="width: 70px; height: 70px; margin: 0 auto 20px; background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); border-radius: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(139, 92, 246, 0.5); font-size: 30px;">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            
+            <h2 style="font-size: 22px; font-weight: 800; margin: 0 0 6px 0; color: #f8fafc;">Centrala Zarządzania PIM</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin: 0 0 25px 0;">Wprowadź kod PIN, aby odblokować panel</p>
+            
+            <!-- Wyświetlacz PIN (Kropki) -->
+            <div style="display: flex; justify-content: center; gap: 12px; margin-bottom: 25px;">
+                <div class="pin-dot" id="pinDot1"></div>
+                <div class="pin-dot" id="pinDot2"></div>
+                <div class="pin-dot" id="pinDot3"></div>
+                <div class="pin-dot" id="pinDot4"></div>
+            </div>
+
+            <input type="password" id="adminPinAuthInput" maxlength="8" style="opacity: 0; position: absolute; pointer-events: none;" autofocus>
+
+            <!-- Klawiatura numeryczna Touch-friendly -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 280px; margin: 0 auto 20px;">
+                <button type="button" class="pin-key-btn" onclick="appendAdminPin('1')">1</button>
+                <button type="button" class="pin-key-btn" onclick="appendAdminPin('2')">2</button>
+                <button type="button" class="pin-key-btn" onclick="appendAdminPin('3')">3</button>
+                <button type="button" class="pin-key-btn" onclick="appendAdminPin('4')">4</button>
+                <button type="button" class="pin-key-btn" onclick="appendAdminPin('5')">5</button>
+                <button type="button" class="pin-key-btn" onclick="appendAdminPin('6')">6</button>
+                <button type="button" class="pin-key-btn" onclick="appendAdminPin('7')">7</button>
+                <button type="button" class="pin-key-btn" onclick="appendAdminPin('8')">8</button>
+                <button type="button" class="pin-key-btn" onclick="appendAdminPin('9')">9</button>
+                <button type="button" class="pin-key-btn pin-key-action" onclick="clearAdminPin()"><i class="fa-solid fa-delete-left"></i></button>
+                <button type="button" class="pin-key-btn" onclick="appendAdminPin('0')">0</button>
+                <button type="button" class="pin-key-btn pin-key-submit" onclick="submitAdminPinAuth()"><i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+
+            <div id="pinErrorMessage" style="color: #f87171; font-size: 13px; font-weight: 700; height: 20px; margin-bottom: 10px;"></div>
+
+            <div style="border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 15px;">
+                <a href="index.html" style="color: #38bdf8; text-decoration: none; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-arrow-left"></i> Przejdź do Katalogu Klienta
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= GŁÓWNY INTERFEJS PANELU PIM ================= -->
+    <div class="container" id="adminMainContent" style="display: none;">
+        
+        <!-- Nagłówek aplikacji PIM -->
+        <header class="header-bar">
+            <div class="brand-block">
+                <div class="brand-badge" style="background: rgba(139, 92, 246, 0.2); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.4);">
+                    <i class="fa-solid fa-user-shield"></i> Panel Właściciela (PIM)
+                </div>
+                <h1>Centrala Porównywarki Cen</h1>
+                <p>Zarządzaj ofertami hurtowni, marżami i katalogiem</p>
+            </div>
+            
+            <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
+                <a href="index.html" target="_blank" class="btn" style="background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; color: #38bdf8; text-decoration: none; font-weight: 700; font-size: 13px; padding: 8px 16px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Podgląd Sklepu Klienta
+                </a>
+                <button class="btn btn-secondary" onclick="logoutAdminSession()" title="Zablokuj panel" style="border-radius: 20px; font-size: 13px; padding: 8px 14px; color: #f87171; border-color: rgba(239, 68, 68, 0.3);">
+                    <i class="fa-solid fa-lock"></i> Wyloguj
+                </button>
+            </div>
+        </header>
+
+        <!-- 1. ASORTYMENT I PORÓWNYWARKA (PIM) + KWARANTANNA -->
+        <section id="view-assortment" class="view-section active">
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-value" id="statProductsCount">0</div>
+                    <div class="stat-label">Produkty w Katalogu</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="statDraftsCount" style="color: var(--warning);">0</div>
+                    <div class="stat-label">Do przejrzenia (Kwarantanna)</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="statOrdersCount" style="color: var(--secondary);">0</div>
+                    <div class="stat-label">Zamówienia Klientów</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="statSuppliersCount">0</div>
+                    <div class="stat-label">Podłączone Hurtownie</div>
+                </div>
+            </div>
+
+            <!-- Podmenu Asortymentu -->
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button class="btn" id="btnShowPim" onclick="showPimView()" style="flex:1;"><i class="fa-solid fa-boxes-stacked"></i> Główna Baza Towarów (Porównywarka)</button>
+                <button class="btn btn-secondary" id="btnShowQuarantine" onclick="showQuarantineView()" style="flex:1; border: 1px solid var(--warning);"><i class="fa-solid fa-triangle-exclamation" style="color: var(--warning);"></i> Kwarantanna Importu</button>
+            </div>
+
+            <!-- GŁÓWNA BAZA PIM -->
+            <div class="glass-card" id="pimContainer">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <h3 style="margin:0;"><i class="fa-solid fa-tags" style="color: var(--primary);"></i> Centralna Baza Towarów (Porównywarka Ofert)</h3>
+                    
+                    <div style="position: relative; display: inline-block;">
+                        <button class="btn" id="btnPimActionMenuToggle" onclick="togglePimActionMenu()" type="button" style="background: linear-gradient(135deg, #8b5cf6, #6366f1); color: #fff; font-weight: 700; font-size: 13px; padding: 8px 16px; border-radius: 10px; border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(139,92,246,0.3); display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-bars"></i> Narzędzia & Raporty <i class="fa-solid fa-chevron-down" style="font-size: 10px; margin-left: 2px;"></i>
+                        </button>
+                        <div id="pimActionMenuDropdown" style="display: none; position: absolute; right: 0; top: 42px; width: 310px; background: var(--bg-card, #1e293b); border: 1px solid var(--border-color, rgba(255,255,255,0.15)); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 9999; padding: 10px; color: var(--text-main);">
+                            <div style="font-size: 10px; font-weight: 800; color: #a78bfa; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; padding: 4px 8px;">📊 Raporty i Eksport</div>
+                            <button type="button" class="menu-item-btn" onclick="executeOpenPartnerReport(); togglePimActionMenu(false);" style="width: 100%; text-align: left; background: none; border: none; color: var(--text-main); font-size: 13px; font-weight: 600; padding: 8px 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-file-pdf" style="color: #c4b5fd;"></i> Otwórz Raport A4 (PDF / Druk)
+                            </button>
+                            <button type="button" class="menu-item-btn" onclick="executeExportDirectExcel(); togglePimActionMenu(false);" style="width: 100%; text-align: left; background: none; border: none; color: var(--text-main); font-size: 13px; font-weight: 600; padding: 8px 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-file-excel" style="color: #34d399;"></i> Zapisz Plik Excel z Porównaniem
+                            </button>
+                            <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 6px 0;"></div>
+                            <div style="font-size: 10px; font-weight: 800; color: #a78bfa; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; padding: 4px 8px;">⚡ Inteligentne Narzędzia</div>
+                            <button type="button" class="menu-item-btn" onclick="executeAutoMergeAllSafeAction(); togglePimActionMenu(false);" style="width: 100%; text-align: left; background: none; border: none; color: var(--text-main); font-size: 13px; font-weight: 600; padding: 8px 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-wand-magic-sparkles" style="color: #38bdf8;"></i> Scal Wszystkie Pewne Pary (100%)
+                            </button>
+                            <button type="button" class="menu-item-btn" onclick="executeOpenDuplicatesModal(); togglePimActionMenu(false);" style="width: 100%; text-align: left; background: none; border: none; color: var(--text-main); font-size: 13px; font-weight: 600; padding: 8px 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-link" style="color: #f59e0b;"></i> Przejrzyj Wykryte Podobne Towary
+                            </button>
+                            <button type="button" class="menu-item-btn" onclick="executeOpenAgentQuestionsModal(); togglePimActionMenu(false);" style="width: 100%; text-align: left; background: none; border: none; color: var(--text-main); font-size: 13px; font-weight: 600; padding: 8px 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-robot" style="color: #ec4899;"></i> Pytania Agenta (Wątpliwe Pary)
+                            </button>
+                            <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 6px 0;"></div>
+                            <div style="font-size: 10px; font-weight: 800; color: #ef4444; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; padding: 4px 8px;">🗑️ Wycofywanie Ofert</div>
+                            <button type="button" class="menu-item-btn" onclick="openWithdrawCategoryModal(); togglePimActionMenu(false);" style="width: 100%; text-align: left; background: none; border: none; color: #f87171; font-size: 13px; font-weight: 600; padding: 8px 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-ban" style="color: #ef4444;"></i> Wycofaj Kategorię lub Hurtownię
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <p style="color:var(--text-muted); font-size:13px; margin-bottom:15px;">Wszystkie Twoje zidentyfikowane towary. Wybierz kategorię lub wpisz frazę, by porównać oferty hurtowni.</p>
+
+                <!-- Pasek Filtrowania i Wyszukiwania PIM -->
+                <div style="display:grid; grid-template-columns: 2fr 1fr; gap:10px; margin-bottom:12px;">
+                    <input type="text" id="pimSearchInput" class="search-input" placeholder="Szukaj w PIM (nazwa, EAN, kod)..." style="width:100%;">
+                    <select id="pimCategoryFilter" class="form-control" style="width:100%;">
+                        <option value="">Wszystkie kategorie</option>
+                    </select>
+                </div>
+                
+                <div style="display:grid; grid-template-columns: 1fr; gap:10px; margin-bottom:15px;">
+                    <select id="pimSupplierFilter" class="form-control" style="width:100%;">
+                        <option value="">Wszyscy dostawcy</option>
+                    </select>
+                </div>
+
+                <!-- Chipsy Statusu -->
+                <div class="pim-status-chips" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:15px;">
+                    <button class="chip active" id="chipAll" onclick="setPimStatusFilter('all')">Wszystkie ( <span id="chipCountAll">0</span> )</button>
+                    <button class="chip" id="chipQuarantine" onclick="setPimStatusFilter('quarantine')"><i class="fa-solid fa-shield-halved" style="color:var(--warning);"></i> Kwarantanna ( <span id="chipCountQuarantine">0</span> )</button>
+                    <button class="chip" id="chipPriceChange" onclick="setPimStatusFilter('price_change')"><i class="fa-solid fa-triangle-exclamation" style="color:var(--danger);"></i> Zmiana Ceny ( <span id="chipCountPriceChange">0</span> )</button>
+                    <button class="chip" id="chipApproved" onclick="setPimStatusFilter('approved')"><i class="fa-solid fa-check" style="color:var(--success);"></i> Katalog Klienta ( <span id="chipCountApproved">0</span> )</button>
+                </div>
+
+                <!-- NOWY INTELIGENTNY PASEK SCALANIA I PYTAŃ AGENTA -->
+                <div class="smart-merger-bar" style="background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--text-main); cursor: pointer; margin: 0;">
+                            <input type="checkbox" id="pimFilterMultiSupplier" style="width: 16px; height: 16px; accent-color: var(--primary);">
+                            <span><i class="fa-solid fa-scale-balanced" style="color: var(--primary);"></i> Pokaż tylko towary z ofertami od wielu dostawców (Porównywarka)</span>
+                        </label>
+                    </div>
+                    
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button class="btn btn-secondary" id="btnAgentQuestionsTrigger" onclick="executeOpenAgentQuestionsModal()" style="font-size: 12px; padding: 6px 14px; background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.4); color: #fbbf24; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-circle-question"></i> ❓ Pytania Agenta <span id="agentQuestionsBadge" class="badge" style="background: #f59e0b; color: #000; font-weight: 800; padding: 1px 6px; border-radius: 10px; font-size: 10px;">0</span>
+                        </button>
+                        <button class="btn btn-secondary" id="btnDuplicatesModalTrigger" onclick="executeOpenDuplicatesModal()" style="font-size: 12px; padding: 6px 14px; background: rgba(139, 92, 246, 0.15); border-color: rgba(139, 92, 246, 0.4); color: #c4b5fd; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-link"></i> 🔗 Wszystkie Podobne <span id="duplicatesCountBadge" class="badge" style="background: #8b5cf6; color: #fff; font-weight: 800; padding: 1px 6px; border-radius: 10px; font-size: 10px;">0</span>
+                        </button>
+                        <button class="btn btn-primary" id="btnAutoMergeSafeDirect" onclick="executeAutoMergeAllSafeAction()" style="font-size: 12px; padding: 6px 14px; background: linear-gradient(135deg, #10b981, #06b6d4); color: #fff; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-bolt"></i> ⚡ Scal 100% Pewne
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Baner Wykrytych Par Duplikatów -->
+                <div id="duplicateAlertBanner" style="display:none; background:rgba(234,179,8,0.12); border:1px solid rgba(234,179,8,0.4); border-radius:12px; padding:12px 16px; margin-bottom:15px; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <i class="fa-solid fa-code-branch" style="color:#fbbf24; font-size:18px;"></i>
+                        <span id="duplicateAlertText" style="font-size:13px; color:#fbbf24; font-weight:700;">Wykryto potencjalne pary zdublowanych towarów w bazie!</span>
+                    </div>
+                    <button class="btn btn-small" onclick="openModal('duplicateMergerModal')" style="background:#f59e0b; color:#000; font-weight:800; font-size:12px; padding:6px 14px; border-radius:8px;">
+                        <i class="fa-solid fa-eye"></i> Pokaż propozycje scalenia i połącz oferty dostawców
+                    </button>
+                </div>
+
+                <!-- Lista Produktów w PIM -->
+                <div class="pim-products-list" id="pimProductsList"></div>
+            </div>
+
+            <!-- KWARANTANNA IMPORTU -->
+            <div class="glass-card" id="quarantineContainer" style="display:none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3><i class="fa-solid fa-shield-halved" style="color: var(--warning);"></i> Kwarantanna Importu (Nowe & Wątpliwe)</h3>
+                    <button class="btn btn-small" id="approveAllQuarantineBtn" onclick="approveAllQuarantine()" style="background:var(--success); color:#fff;">
+                        <i class="fa-solid fa-check-double"></i> Zatwierdź Wszystkie do Katalogu
+                    </button>
+                </div>
+                <p style="color:var(--text-muted); font-size:13px; margin-bottom:15px;">Towary z nowo zaimportowanych cenników, które wymagają weryfikacji przed publikacją dla klientów.</p>
+                <div class="pim-products-list" id="quarantineProductsList"></div>
+            </div>
+        </section>
+
+
+        <!-- 2. MARŻE I KALKULATOR -->
+        <section id="view-margins" class="view-section">
+            <div class="glass-card">
+                <h3><i class="fa-solid fa-calculator" style="color: var(--primary);"></i> Globalna Polityka Marżowa</h3>
+                <p style="color: var(--text-muted); font-size: 13px;">Ustal narzut cenowy dla klientów. Możesz zdefiniować marżę globalną lub przypisać indywidualne marże do poszczególnych kategorii towarowych.</p>
+
+                <div class="form-group" style="max-width: 400px; margin-top: 20px;">
+                    <label for="globalMarginInput">Domyślna Marża Globalna (%):</label>
+                    <div style="display:flex; gap:10px;">
+                        <input type="number" id="globalMarginInput" class="form-control" value="20" min="0" max="200" step="0.5">
+                        <button class="btn" id="saveGlobalMarginBtn" style="width: auto; padding: 0 25px;">Zastosuj</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card" style="margin-top: 20px;">
+                <h3><i class="fa-solid fa-layer-group" style="color: var(--secondary);"></i> Marże dla Poszczególnych Kategorii</h3>
+                <div id="categoryMarginsList" style="margin-top: 15px;"></div>
+            </div>
+        </section>
+
+
+        <!-- 3. ZAMÓWIENIA KLIENTÓW -->
+        <section id="view-orders" class="view-section">
+            <div class="glass-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3><i class="fa-solid fa-cart-arrow-down" style="color: var(--primary);"></i> Historia Zamówień od Klientów</h3>
+                    <button class="btn btn-secondary btn-small" id="refreshOrdersBtn" onclick="renderOrdersView()"><i class="fa-solid fa-arrows-rotate"></i> Odśwież</button>
+                </div>
+                <div id="ordersListContainer"></div>
+            </div>
+        </section>
+
+
+        <!-- 4. DOSTAWCY (HURTOWNIE) -->
+        <section id="view-suppliers" class="view-section">
+            <div class="glass-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3><i class="fa-solid fa-truck-field" style="color: var(--primary);"></i> Baza Hurtowni i Import Cenników</h3>
+                    <button class="btn btn-small" id="addNewSupplierBtn" onclick="openNewSupplierModal()"><i class="fa-solid fa-plus"></i> Dodaj Dostawcę</button>
+                </div>
+                <div id="suppliersCrmList" class="suppliers-grid"></div>
+            </div>
+        </section>
+
+        <!-- 5. MODUŁ B2B I PORÓWNYWARKA HURTOWA -->
+        <section id="view-b2b" class="view-section">
+            <div class="glass-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3><i class="fa-solid fa-building-columns" style="color: var(--primary);"></i> Moduł Porównywania Ofert Hurtowych B2B</h3>
+                    <button class="btn btn-small" onclick="executeOpenPartnerReport()"><i class="fa-solid fa-file-pdf"></i> Generuj Raport Partnerski</button>
+                </div>
+                <p style="color: var(--text-muted); font-size: 13px;">Analizuj różnice cenowe pomiędzy hurtowniami, szukaj najkorzystniejszych stawek i maksymalizuj zysk z zakupów.</p>
+                <div id="b2bComparisonContainer" style="margin-top: 20px;"></div>
+            </div>
+        </section>
+
+        <!-- 6. USTAWIENIA I KOD PIN -->
+        <section id="view-settings" class="view-section">
+            <div class="glass-card">
+                <h3><i class="fa-solid fa-gears" style="color: var(--primary);"></i> Ustawienia Systemu & Bezpieczeństwa</h3>
+                
+                <div style="max-width: 500px; margin-top: 20px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color);">
+                    <h4 style="margin: 0 0 10px 0; color: #fff;"><i class="fa-solid fa-key" style="color: #fbbf24;"></i> Zmiana Kodu PIN Właściciela</h4>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">Aktualny kod PIN zabezpiecza wejście do tego panelu (`admin.html`).</p>
+                    
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label style="font-weight: 700; font-size: 12px;">Nowy 4-cyfrowy Kod PIN:</label>
+                        <input type="password" id="newAdminPinInput" class="form-control" maxlength="8" placeholder="Wpisz nowy PIN..." style="font-size: 16px; letter-spacing: 2px;">
+                    </div>
+                    <button class="btn" onclick="saveNewAdminPin()" style="background: linear-gradient(135deg, #10b981, #059669); font-weight: 700;">
+                        <i class="fa-solid fa-check"></i> Zapisz Nowy PIN
+                    </button>
+                </div>
+
+                <div style="margin-top: 25px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color);">
+                    <h4 style="margin: 0 0 10px 0; color: #fff;"><i class="fa-solid fa-database" style="color: #38bdf8;"></i> Kopia Zapasowa Bazy Danych</h4>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">Pobierz pełną bazę towarów ze wszystkimi zdjęciami i powiązaniami jako plik JSON na swój komputer.</p>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn" onclick="Database.exportBackupToFile()" style="font-weight: 700;">
+                            <i class="fa-solid fa-download"></i> Pobierz Kopię Bazy (JSON)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- DOLNY PASEK NAWIGACJI PIM -->
+    <nav class="bottom-nav" id="adminBottomNav" style="display: none;">
+        <button class="nav-item active" onclick="switchAdminTab('view-assortment')">
+            <i class="fa-solid fa-boxes-stacked"></i>
+            <span>Asortyment</span>
+        </button>
+        <button class="nav-item" onclick="switchAdminTab('view-margins')">
+            <i class="fa-solid fa-calculator"></i>
+            <span>Marża</span>
+        </button>
+        <button class="nav-item" onclick="switchAdminTab('view-orders')">
+            <i class="fa-solid fa-cart-flatbed"></i>
+            <span>Zamówienia</span>
+        </button>
+        <button class="nav-item" onclick="switchAdminTab('view-suppliers')">
+            <i class="fa-solid fa-truck"></i>
+            <span>Dostawcy</span>
+        </button>
+        <button class="nav-item" onclick="switchAdminTab('view-settings')">
+            <i class="fa-solid fa-gears"></i>
+            <span>Ustawienia</span>
+        </button>
+    </nav>
+
+    <!-- ================= MODALE PIM & ADMIN ================= -->
+
+    <!-- MODAL PEŁNEJ EDYCJI PRODUKTU W PIM -->
+    <div class="modal" id="productEditModal">
+        <div class="modal-content modal-lg" style="border-top: 4px solid var(--primary); max-width: 700px;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-pen-to-square" style="color:var(--primary);"></i> Edycja Produktu w Katalogu PIM</h3>
+                <button class="modal-close" onclick="closeModal('productEditModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editProdId">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label style="font-weight:700;">Nazwa Produktu *</label>
+                        <input type="text" id="editProdName" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-weight:700;">Kod EAN</label>
+                        <input type="text" id="editProdEan" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-weight:700;">Kod SKU / Indeks</label>
+                        <input type="text" id="editProdSku" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-weight:700;">Kategoria Główna</label>
+                        <input type="text" id="editProdCategory" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-weight:700;">Podkategoria</label>
+                        <input type="text" id="editProdSubCategory" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-weight:700;">Ilość w zgrzewce (Pakowanie)</label>
+                        <input type="number" id="editProdPackSize" class="form-control" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-weight:700;">Stawka VAT</label>
+                        <input type="text" id="editProdVat" class="form-control" placeholder="np. 23%">
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label style="font-weight:700;">Link do Zdjęcia (URL)</label>
+                        <input type="text" id="editProdImage" class="form-control">
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border-color);">
+                    <button class="btn btn-secondary btn-danger" onclick="executeDeleteCurrentEditProduct()" style="padding: 8px 16px; font-size: 13px;">
+                        <i class="fa-solid fa-trash"></i> Wycofaj / Usuń Towar
+                    </button>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-secondary" onclick="closeModal('productEditModal')">Anuluj</button>
+                        <button class="btn" onclick="saveProductEditForm()" style="background: linear-gradient(135deg, #10b981, #059669); font-weight: 700;">
+                            <i class="fa-solid fa-floppy-disk"></i> Zapisz Zmiany
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL WYBORU TRYBU USUNIĘCIA / WYCOFANIA TOWARU -->
+    <div class="modal" id="deleteProductModal" style="position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 99999999 !important;">
+        <div class="modal-content" style="position: fixed !important; top: 50% !important; left: 50% !important; transform: translate(-50%, -50%) !important; z-index: 99999999 !important; max-width: 550px; border-top: 4px solid var(--danger); background: var(--bg-card, #1e293b); color: var(--text-main, #f8fafc); border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.1)); padding-bottom: 12px;">
+                <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 10px;">
+                    <i class="fa-solid fa-trash-can" style="color: var(--danger, #ef4444);"></i> Wycofanie lub Usunięcie Towaru
+                </h3>
+                <button class="modal-close" onclick="closeModal('deleteProductModal')" style="background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding-top: 15px;">
+                <input type="hidden" id="deleteTargetProductId" value="">
+                
+                <div style="margin-bottom: 18px; padding: 14px; background: rgba(0,0,0,0.25); border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
+                    <div style="font-size: 11px; color: var(--text-dim, #94a3b8); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Wybierasz akcję dla towaru:</div>
+                    <div id="deleteTargetProductName" style="font-size: 16px; font-weight: 700; color: var(--text-main, #fff); margin-top: 4px;"></div>
+                    <div id="deleteTargetProductMeta" style="font-size: 12px; color: var(--text-muted, #cbd5e1); margin-top: 4px;"></div>
+                </div>
+
+                <div style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 12px;">
+                    Wybierz rodzaj operacji:
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <button class="btn btn-withdraw-client" id="btnWithdrawProductFromClient" onclick="executeWithdrawProductFromClientCatalog()" style="background: rgba(234, 179, 8, 0.12); border: 2px solid #f59e0b; color: #fbbf24; text-align: left; padding: 14px 16px; border-radius: 12px; cursor: pointer; transition: all 0.2s ease;">
+                        <div style="font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-eye-slash" style="font-size: 16px;"></i> Wycofaj tylko z Oferty dla Klientów (Chwilowe wstrzymanie)
+                        </div>
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.75); margin-top: 6px; font-weight: 400; line-height: 1.4;">
+                            Towar pozostanie w Twojej bazie porównywarki B2B, ale natychmiast przestanie być widoczny dla Twoich klientów. Będziesz mógł go w każdej chwili ponownie przywrócić.
+                        </div>
+                    </button>
+
+                    <button class="btn btn-permanent-delete" id="btnPermanentDeleteProduct" onclick="executePermanentDeleteProduct()" style="background: rgba(239, 68, 68, 0.12); border: 2px solid var(--danger, #ef4444); color: #f87171; text-align: left; padding: 14px 16px; border-radius: 12px; cursor: pointer; transition: all 0.2s ease;">
+                        <div style="font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-trash-arrow-up" style="font-size: 16px;"></i> Całkowicie Usuń Towar z Bazy (Trwałe usunięcie)
+                        </div>
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.75); margin-top: 6px; font-weight: 400; line-height: 1.4;">
+                            Całkowicie usuwa kartę towaru oraz wszystkie przypisane oferty hurtowni z Twojego systemu.
+                        </div>
+                    </button>
+                </div>
+
+                <div style="margin-top: 20px; text-align: right;">
+                    <button class="btn btn-secondary" onclick="closeModal('deleteProductModal')" style="padding: 8px 20px; font-size: 13px;">Anuluj</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PYTAŃ AGENTA O NIEPEWNE POŁĄCZENIA TOWARÓW -->
+    <div class="modal" id="agentQuestionsModal">
+        <div class="modal-content" style="max-width: 950px; width: 95%;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(245, 158, 11, 0.3);">
+                <h3 style="color: #fbbf24; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-robot" style="color: #f59e0b;"></i> Pytania Agenta: Czy to na pewno ten sam towar?
+                </h3>
+                <button class="modal-close" onclick="closeModal('agentQuestionsModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; padding: 12px 16px; margin-bottom: 15px;">
+                    <p style="margin: 0; font-size: 13px; color: #fde68a; line-height: 1.4;">
+                        <strong>🤖 Komunikat Agenta:</strong> Scaliłem automatycznie wszystkie w 100% pewne pozycje. Poniżej znajdują się towary, co do których <strong>potrzebuję Twojego potwierdzenia</strong>:
+                    </p>
+                </div>
+                <div id="agentQuestionsListContainer" style="display: flex; flex-direction: column; gap: 14px; max-height: 55vh; overflow-y: auto; padding-right: 5px;"></div>
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.08);">
+                <span id="agentQuestionsCountNote" style="font-size: 12px; color: var(--text-dim);">0 pytań oczekujących</span>
+                <button class="btn btn-secondary" onclick="closeModal('agentQuestionsModal')">Zamknij</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SCALANIA DUPLIKATÓW I PODOBNYCH TOWARÓW -->
+    <div class="modal" id="duplicatesModal">
+        <div class="modal-content" style="max-width: 920px; width: 95%;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-link" style="color: var(--primary);"></i> Wykryte Podobne Towary (Scalanie Ofert Wielu Hurtowni)</h3>
+                <button class="modal-close" onclick="closeModal('duplicatesModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                    <p style="color: var(--text-dim); font-size: 13px; margin: 0;">
+                        Połącz towary, aby mieć <strong>jedną kartę towaru z pełnym porównaniem cen hurtowni</strong>.
+                    </p>
+                    <button class="btn btn-primary" onclick="autoMergeAllSafeDuplicatesDirectly()" style="padding: 8px 16px; font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #10b981, #06b6d4);">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> ⚡ Scal Wszystkie Pewne Duplikaty (≥85%)
+                    </button>
+                </div>
+                <div id="duplicatesListContainer" style="display: flex; flex-direction: column; gap: 12px; max-height: 55vh; overflow-y: auto; padding-right: 5px;"></div>
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.08);">
+                <button class="btn btn-secondary" onclick="enrichAllImagesDirectly()" style="font-size: 12px; border-color: rgba(6,182,212,0.4); color: #06b6d4;">
+                    <i class="fa-solid fa-image"></i> 🖼️ Uzupełnij Brakujące Zdjęcia z Kraft Group
+                </button>
+                <button class="btn btn-secondary" onclick="closeModal('duplicatesModal')">Zamknij</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL WKLEJANIA STRONY HURTOWNI -->
+    <div class="modal" id="pasteModal">
+        <div class="modal-content" style="max-width: 550px;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-paste" style="color:var(--primary);"></i> Kreator Wklejania Strony Hurtowni</h3>
+                <button class="modal-close" onclick="closeModal('pasteModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info" style="margin-bottom:15px; font-size:12px; line-height:1.4;">
+                    <i class="fa-solid fa-circle-info" style="font-size:18px;"></i>
+                    <div>
+                        <strong>Instrukcja wklejania:</strong><br>
+                        1. Zaloguj się do hurtowni w przeglądarce.<br>
+                        2. Na stronie z produktami naciśnij <kbd>Ctrl+A</kbd> i <kbd>Ctrl+C</kbd>.<br>
+                        3. Wklej poniżej (<kbd>Ctrl+V</kbd>) i zatwierdź import!
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="pasteSupplierSelect" style="font-weight: 700; color: var(--text-main); font-size: 13px; display: block; margin-bottom: 6px;">
+                        <i class="fa-solid fa-building" style="color: var(--primary);"></i> Wybierz Hurtownię dla Dodawanych Towarów:
+                    </label>
+                    <select id="pasteSupplierSelect" class="form-control" style="font-size: 14px; font-weight: 700; background: rgba(0,0,0,0.3); color: #fff; border: 1.5px solid var(--primary); border-radius: 10px; padding: 10px 14px; width: 100%;"></select>
+                </div>
+
+                <div class="form-group">
+                    <label for="pasteTextarea">Wklej skopiowaną stronę (tekst lub HTML):</label>
+                    <div id="pasteTextarea" contenteditable="true" class="form-control" style="height: 120px; overflow-y: auto; font-family: monospace; font-size: 13px; background: #fff; color: #000; border: 2px dashed #007bff; padding: 12px; border-radius: 8px;" title="Wklej skopiowaną stronę hurtowni tutaj (Ctrl+V)..." oninput="handlePasteLivePreview()" onpaste="setTimeout(handlePasteLivePreview, 100)">Kliknij tutaj, po czym wciśnij <strong>Ctrl+V</strong> aby wkleić...</div>
+                </div>
+
+                <!-- Live Preview -->
+                <div id="pasteLivePreviewContainer" style="display: none; margin-bottom: 15px; background: rgba(0,0,0,0.3); border: 1.5px solid rgba(16, 185, 129, 0.4); border-radius: 10px; padding: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div style="font-weight: 800; font-size: 13px; color: #34d399;" id="pasteLivePreviewTitle">
+                            <i class="fa-solid fa-circle-check"></i> Wykryto towary
+                        </div>
+                        <span id="pasteLivePreviewBadge" style="background: #10b981; color: #000; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 12px;">0 pozycji</span>
+                    </div>
+                    <div style="max-height: 180px; overflow-y: auto; font-size: 12px;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;" id="pasteLivePreviewTable">
+                            <thead>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: var(--text-dim);">
+                                    <th style="padding: 4px; width: 30px;">#</th>
+                                    <th style="padding: 4px; width: 40px;">Foto</th>
+                                    <th style="padding: 4px;">Nazwa Towaru</th>
+                                    <th style="padding: 4px;">Cena Netto</th>
+                                    <th style="padding: 4px;">W Opak.</th>
+                                    <th style="padding: 4px;">EAN</th>
+                                    <th style="padding: 4px;">Ważność</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pasteLivePreviewTbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <button class="btn" id="startDirectPasteImportBtn" onclick="executeDirectPasteImport()" style="background: linear-gradient(135deg, #10b981, #059669); font-weight: 800; font-size: 14px; padding: 12px; display: none;">
+                        <i class="fa-solid fa-bolt"></i> ZATWIERDŹ I DODAJ BEZPOŚREDNIO DO KATALOGU
+                    </button>
+                    <button class="btn" id="startPasteImportBtn" onclick="executePasteImport()">
+                        <i class="fa-solid fa-file-import"></i> Wyodrębnij i Zaimportuj Towary (Weryfikacja Wież)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL WERYFIKACJI MAPOWANIA IMPORTU -->
+    <div class="modal" id="importMappingVerificationModal">
+        <div class="modal-content modal-xl" style="max-width: 95%; max-height: 95vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <div>
+                    <h3 style="margin: 0;"><i class="fa-solid fa-table-columns" style="color: var(--primary);"></i> Weryfikacja Kolumn i Podgląd Importowanych Towarów</h3>
+                    <p style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-muted);">Dopasuj nagłówki kolumn i przejrzyj pierwsze wiersze przed zapisaniem w bazie.</p>
+                </div>
+                <button class="modal-close" onclick="closeModal('importMappingVerificationModal')">&times;</button>
+            </div>
+            
+            <div class="modal-body" style="overflow-y: auto; flex: 1; padding: 15px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--border-color);">
+                    <div class="form-group"><label style="font-weight:700; font-size:12px;">Kolumna: Nazwa Towaru *</label><select id="mapColName" class="form-control" style="font-size:12px;"></select></div>
+                    <div class="form-group"><label style="font-weight:700; font-size:12px;">Kolumna: Cena Netto Zakupu *</label><select id="mapColPrice" class="form-control" style="font-size:12px;"></select></div>
+                    <div class="form-group"><label style="font-weight:700; font-size:12px;">Kolumna: Kod EAN</label><select id="mapColEan" class="form-control" style="font-size:12px;"></select></div>
+                    <div class="form-group"><label style="font-weight:700; font-size:12px;">Kolumna: SKU / Indeks</label><select id="mapColSku" class="form-control" style="font-size:12px;"></select></div>
+                    <div class="form-group"><label style="font-weight:700; font-size:12px;">Kolumna: Ilość w Zgrzewce</label><select id="mapColPackSize" class="form-control" style="font-size:12px;"></select></div>
+                    <div class="form-group"><label style="font-weight:700; font-size:12px;">Kolumna: Stawka VAT</label><select id="mapColVat" class="form-control" style="font-size:12px;"></select></div>
+                </div>
+
+                <div style="overflow-x: auto; margin-bottom: 15px;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;" id="importMappingPreviewTable">
+                        <thead id="importMappingPreviewThead"></thead>
+                        <tbody id="importMappingPreviewTbody"></tbody>
+                    </table>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                    <div style="font-size: 11px; color: var(--text-muted);">
+                        <i class="fa-solid fa-lightbulb" style="color: var(--warning);"></i> <strong>Podpowiedź:</strong> Sprawdź czy kolumny są właściwie przypisane.
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-secondary" onclick="closeModal('importMappingVerificationModal')">Anuluj</button>
+                        <button class="btn" id="btnConfirmImportMapping" onclick="confirmAndExecuteImport()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; font-weight: 700; padding: 10px 24px;">
+                            <i class="fa-solid fa-file-import"></i> Potwierdzam Mapowanie - Zapisz Towary w Bazie
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DLA PARTNERÓW BIZNESOWYCH (RAPORT A4) -->
+    <div class="modal" id="partnerReportModal">
+        <div class="modal-content modal-xl" style="background: #0d0f1b; border: 1px solid var(--border-color-glow);">
+            <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">
+                <div>
+                    <h3 style="margin:0; color:#fff; font-size: 20px;"><i class="fa-solid fa-briefcase" style="color: var(--primary);"></i> Raport Porównawczy dla Partnerów Biznesowych</h3>
+                    <p style="margin:3px 0 0 0; font-size:12px; color:var(--text-muted);">Zestawienie cen zakupu, alternatywnych dostawców i warunków handlowych gotowe do druku A4</p>
+                </div>
+                <button class="modal-close" onclick="closeModal('partnerReportModal')">&times;</button>
+            </div>
+            <div class="modal-body" style="padding-top: 15px;">
+                <div class="no-print" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:20px; background:rgba(255,255,255,0.03); padding:12px 18px; border-radius:16px; border:1px solid var(--border-color);">
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <span style="font-size:12px; color:var(--text-muted); font-weight:600;">Kategoria towarów:</span>
+                        <select id="partnerCategoryFilter" class="form-control" style="width:auto; padding:6px 12px; font-size:12px;">
+                            <option value="">Wszystkie kategorie</option>
+                        </select>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn" id="btnPrintPartnerA4" style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: #fff; width: auto; font-size: 13px; padding: 10px 22px; font-weight: 700; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);">
+                            <i class="fa-solid fa-print"></i> Drukuj Raport A4 dla Partnerów / Pobierz PDF
+                        </button>
+                    </div>
+                </div>
+
+                <div id="partnerPrintableDocument" style="background: #141726; padding: 25px; border-radius: 20px; border: 1px solid var(--border-color);">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 25px; border-bottom: 2px solid var(--primary); padding-bottom: 15px;">
+                        <div>
+                            <h2 style="margin:0; font-size: 22px; color: #fff; text-transform: uppercase; letter-spacing: 1px;">Raport Porównania Ofert i Warunków Dostawców</h2>
+                            <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-muted);">Dokument Analityczny • Wygenerowano: <strong id="partnerReportDate" style="color: var(--secondary);">-</strong></p>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 12px; font-weight: 700; color: var(--primary);">PORÓWNYWARKA CEN B2B</div>
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px;">
+                        <div class="stat-box" style="background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3); text-align: left; padding: 15px;">
+                            <div style="font-size: 11px; color: var(--text-muted);">Szacowana Oszczędność Zakupowa</div>
+                            <div class="stat-value" id="partnerTotalSavings" style="color: var(--success); font-size: 24px; font-weight: 700;">0,00 zł</div>
+                        </div>
+                        <div class="stat-box" style="background: rgba(6, 182, 212, 0.1); border-color: rgba(6, 182, 212, 0.3); text-align: left; padding: 15px;">
+                            <div style="font-size: 11px; color: var(--text-muted);">Najbardziej Konkurencyjna Hurtownia</div>
+                            <div class="stat-value" id="partnerBestSupplier" style="color: var(--secondary); font-size: 18px; font-weight: 700;">-</div>
+                        </div>
+                        <div class="stat-box" style="background: rgba(139, 92, 246, 0.1); border-color: rgba(139, 92, 246, 0.3); text-align: left; padding: 15px;">
+                            <div style="font-size: 11px; color: var(--text-muted);">Średnia Obniżka Kosztu Zakupu</div>
+                            <div class="stat-value" id="partnerAvgSavingsPct" style="color: var(--primary); font-size: 24px; font-weight: 700;">0%</div>
+                        </div>
+                    </div>
+
+                    <div style="overflow-x:auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+                            <thead>
+                                <tr style="background: rgba(255,255,255,0.05); color: var(--text-muted); border-bottom: 2px solid var(--border-color);">
+                                    <th style="padding: 12px; width: 30%;">Produkt / Kod EAN</th>
+                                    <th style="padding: 12px; width: 40%;">Wszyscy Dostawcy i Ceny Netto</th>
+                                    <th style="padding: 12px; width: 15%; text-align: center;">Różnica (Oszczędność)</th>
+                                    <th style="padding: 12px; width: 15%;">Warunki Najtańszego Dostawcy</th>
+                                </tr>
+                            </thead>
+                            <tbody id="partnerReportTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL WYCOFYWANIA KATEGORII LUB CAŁEJ HURTOWNI -->
+    <div class="modal" id="withdrawCategoryModal">
+        <div class="modal-content" style="max-width: 520px;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-ban" style="color: var(--danger);"></i> Wycofanie Kategorii / Hurtowni</h3>
+                <button class="modal-close" onclick="closeModal('withdrawCategoryModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); padding: 12px; border-radius: 10px; margin-bottom: 15px; font-size: 13px; color: var(--text-main);">
+                    <i class="fa-solid fa-triangle-exclamation" style="color: var(--danger);"></i> Wybierz hurtownię i zakres do wycofania.
+                </div>
+
+                <div class="form-group">
+                    <label style="font-weight:700;">1. Wybierz Hurtownię:</label>
+                    <select id="withdrawSupplierSelect" class="form-control"></select>
+                </div>
+
+                <div class="form-group">
+                    <label style="font-weight:700;">2. Wybierz Zakres do Wycofania:</label>
+                    <select id="withdrawCategorySelect" class="form-control">
+                        <option value="ALL_CATEGORIES">⚠️ CAŁA HURTOWNIA (Wszystkie kategorie i oferty)</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                    <button class="btn btn-secondary" onclick="closeModal('withdrawCategoryModal')">Anuluj</button>
+                    <button class="btn btn-danger" id="btnConfirmWithdraw" onclick="executeConfirmWithdrawModal()" style="font-weight: 700; width: auto; padding: 0 25px;">
+                        <i class="fa-solid fa-ban"></i> Potwierdź Wycofanie
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDYCJI / DODAWANIA DOSTAWCY -->
+    <div class="modal" id="crmSupplierModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 id="crmSupplierModalTitle"><i class="fa-solid fa-building"></i> Wizytówka Dostawcy</h3>
+                <button class="modal-close" onclick="closeModal('crmSupplierModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="crmSupplierId">
+                <div class="form-group">
+                    <label>Nazwa Hurtowni / Dostawcy *</label>
+                    <input type="text" id="crmSupplierName" class="form-control" placeholder="np. Eurocash, Monolith" required>
+                </div>
+                <div class="form-group">
+                    <label>Dane Firmowe (NIP, Adres, Firma)</label>
+                    <textarea id="crmSupplierDetails" class="form-control" rows="2" placeholder="NIP: 123456789..."></textarea>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Dni Dostaw</label>
+                        <input type="text" id="crmSupplierDeliveryDays" class="form-control" placeholder="np. Wt, Czw">
+                    </div>
+                    <div class="form-group">
+                        <label>Min. Logistyczne (zł)</label>
+                        <input type="number" id="crmSupplierMinOrder" class="form-control" placeholder="np. 1500">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Kontakt (Handlowiec / Telefon)</label>
+                    <input type="text" id="crmSupplierContact" class="form-control" placeholder="np. Jan Kowalski: 500-000-000">
+                </div>
+                <div class="form-group">
+                    <label>Ważne Notatki / Warunki Rabatowe</label>
+                    <textarea id="crmSupplierNotes" class="form-control" rows="3" placeholder="Dodatkowe informacje o współpracy..."></textarea>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+                    <button class="btn btn-secondary btn-danger" id="crmDeleteSupplierBtn" style="width: auto; padding: 0 20px;"><i class="fa-solid fa-trash"></i></button>
+                    <button class="btn" id="crmSaveSupplierBtn" onclick="saveSupplierFromForm()" style="width: auto; padding: 0 40px;">Zapisz</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Skrypty aplikacji -->
+    <script src="kravets_catalog_data.js?v=2070"></script>
+    <script src="kraft_catalog_data.js?v=2070"></script>
+    <script src="database.js?v=2070"></script>
+    <script src="parser.js?v=2070"></script>
+    <script src="scraper.js?v=2070"></script>
+    <script src="app.js?v=2070"></script>
+</body>
+</html>

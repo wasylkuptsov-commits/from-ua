@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Automated Multi-Browser Test Suite - Product Deletion & Viewport Modals</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; padding: 30px; margin: 0; }
+        .card { background: #1e293b; border-radius: 12px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); max-width: 900px; margin: 0 auto 20px auto; border: 1px solid #334155; }
+        h1 { color: #38bdf8; margin-top: 0; display: flex; align-items: center; gap: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #334155; }
+        th { background: #0f172a; color: #94a3b8; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+        .badge-pass { background: #10b98122; color: #34d399; border: 1px solid #10b98144; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px; }
+        .badge-fail { background: #ef444422; color: #f87171; border: 1px solid #ef444444; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px; }
+        .btn-run { background: linear-gradient(135deg, #06b6d4, #8b5cf6); color: #fff; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; }
+        .summary-box { background: #10b98115; border: 1px solid #10b98144; color: #34d399; padding: 16px; border-radius: 8px; font-weight: bold; margin-top: 20px; font-size: 15px; }
+        iframe { width: 100%; height: 500px; border: 1px solid #334155; border-radius: 8px; margin-top: 20px; background: #fff; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>🧪 Multi-Browser Automated Test Suite: Product Deletion & Viewport Modals</h1>
+    <p style="color: #94a3b8; font-size: 14px;">
+        Verifies inline card action bar deletion (Propozycja 1), fixed viewport modal positioning (top: 50%, left: 50%, z-index 99999999), Button A (withdrawal), Button B (permanent deletion), Button C (cancel), and database state integrity across browsers.
+    </p>
+
+    <button class="btn-run" onclick="runAutomatedTests()">▶️ Run Full Test Suite</button>
+
+    <div id="summaryBox" class="summary-box" style="display: none;"></div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Test Case</th>
+                <th>Target Feature / Requirement</th>
+                <th>Browser Engine</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="testResultsBody">
+            <tr><td colspan="4" style="text-align: center; color: #64748b;">Click "Run Full Test Suite" to execute test cases.</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="card" style="display: none;" id="iframeCard">
+    <h3 style="color: #cbd5e1; margin-top: 0;">Live Target Application View</h3>
+    <iframe id="targetFrame" src="index.html"></iframe>
+</div>
+
+<script>
+async function runAutomatedTests() {
+    document.getElementById('iframeCard').style.display = 'block';
+    const iframe = document.getElementById('targetFrame');
+    const tbody = document.getElementById('testResultsBody');
+    const summaryBox = document.getElementById('summaryBox');
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #38bdf8;">Running tests in application iframe...</td></tr>';
+
+    await new Promise(r => setTimeout(r, 800));
+    const win = iframe.contentWindow;
+    const doc = iframe.contentDocument;
+
+    const browserEngine = detectBrowserEngine();
+    const results = [];
+
+    // Ensure Admin Mode
+    win.setAppMode(true);
+    await sleep(300);
+
+    // Test Case 1: Inline Action Bar Toggle & Modal Centering
+    const testId1 = 'TEST_AUTO_INLINE_' + Date.now();
+    try {
+        const prods = win.Database.getProducts();
+        prods.unshift({
+            id: testId1,
+            name: 'Automated Test Product Inline',
+            category: 'Test',
+            isApproved: true,
+            offers: [{ source: 'Test', price: 15.00 }]
+        });
+        win.Database.saveProducts(prods);
+        win.renderPimView();
+        await sleep(200);
+
+        const trashBtn = doc.querySelector(`.btn-delete-product-pim[data-id="${testId1}"]`);
+        if (!trashBtn) throw new Error("Trash button not found on card");
+
+        trashBtn.click();
+        await sleep(200);
+
+        const inlineBar = doc.getElementById(`inlineDeleteBar_${testId1}`);
+        const modal = doc.getElementById('deleteProductModal');
+        const modalContent = doc.querySelector('#deleteProductModal .modal-content');
+
+        const inlineVisible = inlineBar && inlineBar.style.display !== 'none';
+        const modalVisible = modal && modal.classList.contains('active');
+        const modalStyles = modalContent ? win.getComputedStyle(modalContent) : null;
+        const isCentered = modalStyles && modalStyles.position === 'fixed' && modalStyles.top === '50%' && modalStyles.left === '50%';
+
+        if (inlineVisible && modalVisible && isCentered) {
+            results.push({ name: '1. Inline Action Bar & Viewport Modal Toggle', target: 'Propozycja 1 & Viewport Centering', status: 'PASS' });
+        } else {
+            results.push({ name: '1. Inline Action Bar & Viewport Modal Toggle', target: 'Propozycja 1 & Viewport Centering', status: 'FAIL' });
+        }
+    } catch(e) {
+        results.push({ name: '1. Inline Action Bar & Viewport Modal Toggle', target: 'Propozycja 1 & Viewport Centering', status: 'FAIL: ' + e.message });
+    }
+
+    // Cleanup 1
+    try {
+        let prods = win.Database.getProducts().filter(p => p.id !== testId1);
+        win.Database.saveProducts(prods);
+        win.renderPimView();
+    } catch(e){}
+
+    // Test Case 2: Button A - Withdrawal from Client Catalog
+    const testId2 = 'TEST_AUTO_WITHDRAW_' + Date.now();
+    try {
+        const prods = win.Database.getProducts();
+        prods.unshift({
+            id: testId2,
+            name: 'Automated Test Product Withdrawal',
+            category: 'Test',
+            isApproved: true,
+            offers: [{ source: 'Test', price: 20.00 }]
+        });
+        win.Database.saveProducts(prods);
+        win.renderPimView();
+        await sleep(200);
+
+        const trashBtn = doc.querySelector(`.btn-delete-product-pim[data-id="${testId2}"]`);
+        trashBtn.click();
+        await sleep(200);
+
+        const btnWithdraw = doc.querySelector(`#inlineDeleteBar_${testId2} .btn-inline-withdraw`);
+        btnWithdraw.click();
+        await sleep(200);
+
+        const updatedProd = win.Database.getProducts().find(p => p.id === testId2);
+        const isApprovedFalse = updatedProd && updatedProd.isApproved === false;
+
+        win.setAppMode(false);
+        await sleep(200);
+        const clientGrid = doc.getElementById('catalogProductsGrid');
+        const hiddenFromClient = clientGrid && !clientGrid.innerText.includes('Automated Test Product Withdrawal');
+
+        if (isApprovedFalse && hiddenFromClient) {
+            results.push({ name: '2. Button A: Wycofaj z Katalogu Klienta', target: 'isApproved=false & Hide from Client Catalog', status: 'PASS' });
+        } else {
+            results.push({ name: '2. Button A: Wycofaj z Katalogu Klienta', target: 'isApproved=false & Hide from Client Catalog', status: 'FAIL' });
+        }
+    } catch(e) {
+        results.push({ name: '2. Button A: Wycofaj z Katalogu Klienta', target: 'isApproved=false & Hide from Client Catalog', status: 'FAIL: ' + e.message });
+    }
+
+    // Cleanup 2
+    try {
+        win.setAppMode(true);
+        let prods = win.Database.getProducts().filter(p => p.id !== testId2);
+        win.Database.saveProducts(prods);
+        win.renderPimView();
+    } catch(e){}
+
+    // Test Case 3: Button B - Permanent Deletion from Database
+    const testId3 = 'TEST_AUTO_PERM_' + Date.now();
+    try {
+        const prods = win.Database.getProducts();
+        prods.unshift({
+            id: testId3,
+            name: 'Automated Test Product Permanent Delete',
+            category: 'Test',
+            isApproved: true,
+            offers: [{ source: 'Test', price: 30.00 }]
+        });
+        win.Database.saveProducts(prods);
+        win.renderPimView();
+        await sleep(200);
+
+        const trashBtn = doc.querySelector(`.btn-delete-product-pim[data-id="${testId3}"]`);
+        trashBtn.click();
+        await sleep(200);
+
+        const btnPermDelete = doc.querySelector(`#inlineDeleteBar_${testId3} .btn-inline-permanent-delete`);
+        btnPermDelete.click();
+        await sleep(200);
+
+        const existsInDb = win.Database.getProducts().some(p => p.id === testId3);
+        const cardRemoved = !doc.getElementById(`inlineDeleteBar_${testId3}`);
+
+        if (!existsInDb && cardRemoved) {
+            results.push({ name: '3. Button B: Usuń z Bazy Całkowicie', target: 'Remove from Database & DOM Cleanup', status: 'PASS' });
+        } else {
+            results.push({ name: '3. Button B: Usuń z Bazy Całkowicie', target: 'Remove from Database & DOM Cleanup', status: 'FAIL' });
+        }
+    } catch(e) {
+        results.push({ name: '3. Button B: Usuń z Bazy Całkowicie', target: 'Remove from Database & DOM Cleanup', status: 'FAIL: ' + e.message });
+    }
+
+    // Test Case 4: Database Clean Integrity
+    try {
+        const dbProducts = win.Database.getProducts();
+        const testLeaked = dbProducts.some(p => p.id && p.id.startsWith('TEST_AUTO_'));
+        if (!testLeaked) {
+            results.push({ name: '4. Database Cleanliness & Data Integrity', target: '0% Test Data Pollution', status: 'PASS' });
+        } else {
+            results.push({ name: '4. Database Cleanliness & Data Integrity', target: '0% Test Data Pollution', status: 'FAIL' });
+        }
+    } catch(e) {
+        results.push({ name: '4. Database Cleanliness & Data Integrity', target: '0% Test Data Pollution', status: 'FAIL: ' + e.message });
+    }
+
+    // Render Results
+    tbody.innerHTML = '';
+    let passCount = 0;
+    results.forEach(res => {
+        const isPass = res.status === 'PASS';
+        if (isPass) passCount++;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="font-weight: bold;">${res.name}</td>
+            <td style="color: #94a3b8; font-size: 13px;">${res.target}</td>
+            <td style="color: #38bdf8; font-weight: bold;">${browserEngine}</td>
+            <td><span class="${isPass ? 'badge-pass' : 'badge-fail'}">${res.status}</span></td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    const passRate = Math.round((passCount / results.length) * 100);
+    summaryBox.style.display = 'block';
+    summaryBox.innerHTML = `✅ TEST SUITE FINISHED: ${passCount} / ${results.length} PASSED (${passRate}% PASS RATE) ON ENGINE: ${browserEngine.toUpperCase()}`;
+}
+
+function detectBrowserEngine() {
+    const ua = navigator.userAgent;
+    if (ua.includes('Edg/')) return 'Edge (Chromium)';
+    if (ua.includes('Chrome/')) return 'Chromium';
+    if (ua.includes('Firefox/')) return 'Firefox';
+    if (ua.includes('Safari/') && !ua.includes('Chrome/')) return 'WebKit (Safari)';
+    return 'Chromium/Generic';
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>

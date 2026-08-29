@@ -1,0 +1,41 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>
+<div id="raw" style="display:none;"></div>
+<script>
+    fetch('cart_dump.html').then(r => r.text()).then(html => {
+        document.getElementById('raw').innerHTML = html;
+        const rawInput = document.getElementById('raw').innerHTML;
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(rawInput, 'text/html');
+        let products = [];
+        const selectors = ['.cart-product-container-js', '.product-item-ui', '.teneso-product-item'];
+        let foundNodes = [];
+        for (const sel of selectors) {
+            const nodes = doc.querySelectorAll(sel);
+            if (nodes.length > 0) {
+                foundNodes = Array.from(nodes);
+                break;
+            }
+        }
+        foundNodes.forEach(node => {
+            let name = '';
+            let price = 0;
+            const inputElem = node.querySelector('input[name="quantity"]');
+            if (node.classList.contains('cart-product-container-js') && inputElem) {
+                name = inputElem.getAttribute('data-name');
+                const pStr = inputElem.getAttribute('data-price');
+                if (pStr) price = parseFloat(pStr.replace(/\s/g, '').replace(',', '.'));
+            }
+            let packSize = 1;
+            const packMatch = node.innerHTML.match(/(?:W kartonie|Szt\. w kartonie|W opakowaniu|Ilość w opakowaniu).*?<em[^>]*>\s*(\d+)/i) || node.textContent.match(/(?:W kartonie|Szt\. w kartonie|W opakowaniu|Ilość w opakowaniu):\s*(\d+)/i);
+            if (packMatch) packSize = parseInt(packMatch[1], 10) || 1;
+            
+            if (packSize === 1) {
+                const cartPackMatch = node.textContent.match(/1\s*(?:opak|zgrz|karton|opak\.)\s*=\s*(\d+)/i);
+                if (cartPackMatch) packSize = parseInt(cartPackMatch[1], 10) || 1;
+            }
+            products.push({name, price, packSize});
+        });
+        document.body.innerHTML += '<pre>' + JSON.stringify(products, null, 2) + '</pre>';
+    });
+</script>
+</body></html>

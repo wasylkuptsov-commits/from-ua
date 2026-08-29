@@ -1,0 +1,19 @@
+<!-- Wklej tutaj skopiowanÄ… stronÄ™ z hurtowni Kraft Group i zapisz plik (Ctrl+S) -->
+ZdjêcieNazwaEANTerminCenaKwas chlebowy "Taras Bia³y" NEW 0.5 l590800730705227.11.20263,15 z³Pocz¹tek formularza
+iloœæ Kwas chlebowy "Taras Bia³y" NEW 0.5 l 
+Dó³ formularzaKwas chlebowy "Taras Bia³y" NEW 1.5 l590800730700727.11.20266,49 z³Pocz¹tek formularza
+iloœæ Kwas chlebowy "Taras Bia³y" NEW 1.5 l 
+Dó³ formularzaKwas chlebowy "Taras Czarny" NEW 0.5 l590800730704511.01.20273,15 z³Pocz¹tek formularza
+iloœæ Kwas chlebowy "Taras Czarny" NEW 0.5 l 
+Dó³ formularzaKwas chlebowy "Taras Czarny" NEW 1.5 l590800730701421.01.20277,40 z³Pocz¹tek formularza
+iloœæ Kwas chlebowy "Taras Czarny" NEW 1.5 l 
+Dó³ formularzaKwas chlebowy "Taras Czarny" NEW LANY 30.0 l - g³owica typu G482025094521218.11.2026185,40 z³Pocz¹tek formularza
+iloœæ Kwas chlebowy "Taras Czarny" NEW LANY 30.0 l - g³owica typu G 
+Dó³ formularzaKwas chlebowy "Taras Prawdziwy" NEW 0.5 l590800730703812.01.20273,15 z³Pocz¹tek formularza
+iloœæ Kwas chlebowy "Taras Prawdziwy" NEW 0.5 l 
+Dó³ formularzaKwas chlebowy "Taras Prawdziwy" NEW 2.0 l590800730702113.02.20278,93 z³Pocz¹tek formularza
+iloœæ Kwas chlebowy "Taras Prawdziwy" NEW 2.0 l 
+Dó³ formularzaRega³ Drewniany na "Kwas Taras" - ma³y0,01 z³Pocz¹tek formularza
+iloœæ Rega³ Drewniany na "Kwas Taras" - ma³y 
+Dó³ formularza
+
