@@ -1,4 +1,4 @@
-const CACHE_NAME = 'katalog-b2b-v1.0';
+const CACHE_NAME = 'katalog-b2b-v2.2-stable';
 const STATIC_ASSETS = [
   './',
   './index.html',

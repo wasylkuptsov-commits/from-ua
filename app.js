@@ -6493,8 +6493,8 @@ function initApp() {
         // Czysty katalog klienta (index.html)
         if (typeof applySavedTheme === 'function') applySavedTheme();
         if (typeof updateB2bHeaderUI === 'function') updateB2bHeaderUI();
+        if (typeof renderCategoriesBar === 'function') renderCategoriesBar();
         if (typeof renderCatalog === 'function') renderCatalog();
-        if (typeof populateCategories === 'function') populateCategories();
         if (typeof updateCartUI === 'function') updateCartUI();
     }
 }
