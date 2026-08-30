@@ -328,6 +328,45 @@
             </div>
         </section>
 
+        <!-- ================= ZAKŁADKA 6: KLIENCI B2B & REJESTRACJE ================= -->
+        <section id="view-b2b-clients" class="view-section" style="display: none;">
+            <div class="glass-card" style="margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
+                    <div>
+                        <h3 style="margin: 0; color: #fff; display: flex; align-items: center; gap: 10px;">
+                            <i class="fa-solid fa-users-gear" style="color: #10b981;"></i> Baza Klientów B2B & Rejestracje NIP
+                        </h3>
+                        <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-muted);">
+                            Zarządzaj dostępem firm do cen hurtowych. Zatwierdzaj nowe zgłoszenia i wysyłaj aktywacje WhatsApp.
+                        </p>
+                    </div>
+                    <button type="button" onclick="openManualAddB2bClientModal()" class="btn" style="background: linear-gradient(135deg, #10b981, #059669); font-weight: 700; font-size: 13px; padding: 10px 18px; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-plus"></i> Dodaj Zweryfikowany NIP
+                    </button>
+                </div>
+
+                <!-- Tabela Klientów B2B -->
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+                        <thead>
+                            <tr style="background: rgba(255,255,255,0.05); color: var(--text-muted); border-bottom: 2px solid var(--border-color);">
+                                <th style="padding: 12px;">NIP</th>
+                                <th style="padding: 12px;">Firma / Odbiorca</th>
+                                <th style="padding: 12px;">Telefon WhatsApp</th>
+                                <th style="padding: 12px;">Adres Dostawy</th>
+                                <th style="padding: 12px;">Data</th>
+                                <th style="padding: 12px; text-align: center;">Status</th>
+                                <th style="padding: 12px; text-align: right;">Akcje</th>
+                            </tr>
+                        </thead>
+                        <tbody id="b2bClientsAdminTableBody">
+                            <!-- Wypełniane dynamicznie w app.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
     </div>
 
     <!-- DOLNY PASEK NAWIGACJI PIM -->
@@ -339,6 +378,10 @@
         <button class="nav-item" onclick="switchAdminTab('view-margins')">
             <i class="fa-solid fa-calculator"></i>
             <span>Marża</span>
+        </button>
+        <button class="nav-item" onclick="switchAdminTab('view-b2b-clients')">
+            <i class="fa-solid fa-users"></i>
+            <span>Klienci B2B</span>
         </button>
         <button class="nav-item" onclick="switchAdminTab('view-orders')">
             <i class="fa-solid fa-cart-flatbed"></i>
@@ -767,6 +810,46 @@
                 <div style="display: flex; justify-content: space-between; margin-top: 15px;">
                     <button class="btn btn-secondary btn-danger" id="crmDeleteSupplierBtn" style="width: auto; padding: 0 20px;"><i class="fa-solid fa-trash"></i></button>
                     <button class="btn" id="crmSaveSupplierBtn" onclick="saveSupplierFromForm()" style="width: auto; padding: 0 40px;">Zapisz</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL RĘCZNEGO DODAWANIA KLIENTA B2B -->
+    <div class="modal" id="manualAddB2bClientModal">
+        <div class="modal-content" style="max-width: 480px;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-user-plus" style="color: #10b981;"></i> Dodaj Zweryfikowanego Klienta B2B</h3>
+                <button class="modal-close" onclick="closeModal('manualAddB2bClientModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label style="font-weight:700; font-size:12px;">Numer NIP * (10 cyfr)</label>
+                    <input type="text" id="manualB2bNip" class="form-control" placeholder="np. 1234567890" maxlength="10" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label style="font-weight:700; font-size:12px;">Nazwa Firmy / Imię *</label>
+                    <input type="text" id="manualB2bName" class="form-control" placeholder="np. Sklep Spożywczy Euro-Max" required>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-weight:700; font-size:12px;">Telefon WhatsApp *</label>
+                        <input type="tel" id="manualB2bPhone" class="form-control" placeholder="np. 500 600 700" required>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-weight:700; font-size:12px;">E-mail</label>
+                        <input type="email" id="manualB2bEmail" class="form-control" placeholder="np. biuro@firma.pl">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="font-weight:700; font-size:12px;">Adres Dostawy / Miasto</label>
+                    <input type="text" id="manualB2bAddress" class="form-control" placeholder="np. ul. Targowa 4, Kraków">
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button class="btn btn-secondary" onclick="closeModal('manualAddB2bClientModal')">Anuluj</button>
+                    <button class="btn" onclick="saveManualB2bClient()" style="background: linear-gradient(135deg, #10b981, #059669); font-weight: 700;">
+                        <i class="fa-solid fa-check"></i> Aktywuj i Zapisz NIP
+                    </button>
                 </div>
             </div>
         </div>

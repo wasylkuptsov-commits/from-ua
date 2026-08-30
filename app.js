@@ -3233,6 +3233,10 @@ function initApp() {
             const brandShort = (p.brand || p.category || 'KRAVETS').split(' - ')[0].trim();
             const hasValidImg = p.image && !p.image.includes('placeholder') && !p.image.includes('unsplash') && p.image.length > 5;
 
+            const isB2b = typeof Database !== 'undefined' && Database.isB2bLoggedIn();
+            const packSize = parseInt(p.packSize) > 0 ? parseInt(p.packSize) : 1;
+            const packClientPrice = clientPrice * packSize;
+
             const card = document.createElement('div');
             card.className = 'catalog-card';
             card.innerHTML = `
@@ -3261,27 +3265,34 @@ function initApp() {
                 <div class="card-body">
                     <div class="card-title" style="min-height: 40px; margin-bottom: 8px;">${p.name}</div>
                     
-                    <div class="card-price-row" style="margin-bottom: 12px; align-items: flex-end;">
-                        <div>
-                            <div style="font-size: 11px; color: var(--primary); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;">Cena netto / szt.</div>
-                            <div class="card-price" style="font-size: 24px; color: #fff;">${clientPrice.toFixed(2)} zł</div>
+                    ${isB2b ? `
+                        <div class="card-price-row" style="margin-bottom: 12px; align-items: flex-end; justify-content: space-between;">
+                            <div>
+                                <div style="font-size: 11px; color: #10b981; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">
+                                    ${packSize > 1 ? `Cena za zgrzewkę (${packSize} szt.):` : 'Cena netto / szt.:'}
+                                </div>
+                                <div class="card-price" style="font-size: 22px; font-weight: 800; color: #fff;">
+                                    ${packClientPrice.toFixed(2)} zł <span style="font-size: 12px; font-weight: 600; color: var(--text-dim);">netto</span>
+                                </div>
+                                ${packSize > 1 ? `<div style="font-size: 11px; color: var(--text-dim); margin-top: 1px;">(${clientPrice.toFixed(2)} zł netto / szt.)</div>` : ''}
+                            </div>
+                            <button class="btn-card-add" title="Dodaj 1 zgrzewkę (${packSize} szt.) do koszyka" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; border-radius: 10px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; transition: transform 0.15s ease; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);">
+                                <i class="fa-solid fa-cart-plus"></i>
+                            </button>
                         </div>
-                        <button class="btn-card-add" title="Dodaj do koszyka">
-                            <i class="fa-solid fa-cart-plus"></i>
-                        </button>
-                    </div>
+                    ` : `
+                        <div style="margin-bottom: 14px;">
+                            <button type="button" class="btn-open-b2b-gate" style="width: 100%; background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.4); color: #c4b5fd; padding: 10px 12px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s ease;">
+                                <i class="fa-solid fa-lock" style="color: #a78bfa;"></i> Zaloguj NIP (Ceny B2B)
+                            </button>
+                        </div>
+                    `}
 
                     <div style="font-size: 12px; color: var(--text-muted); background: rgba(0,0,0,0.2); padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
-                        ${p.packSize > 1 ? `
                         <div style="display:flex; justify-content:space-between; margin-bottom:5px; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 5px;">
-                            <span>Cena za całą zgrzewkę:</span>
-                            <strong style="color:var(--text-main);">${(clientPrice * p.packSize).toFixed(2)} zł</strong>
+                            <span>Pakowanie (zgrzewka):</span>
+                            <strong style="color:var(--text-main);">${packSize} ${p.unit || 'szt.'}</strong>
                         </div>
-                        <div style="display:flex; justify-content:space-between; margin-bottom:5px; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 5px;">
-                            <span>Sztuk w zgrzewce:</span>
-                            <strong style="color:var(--text-main);">${p.packSize}</strong>
-                        </div>
-                        ` : ''}
                         <div style="display:flex; justify-content:space-between;">
                             <span>Stawka VAT:</span>
                             <strong style="color:var(--text-main);">${p.vat || 'nd.'}</strong>
@@ -3297,11 +3308,20 @@ function initApp() {
             `;
 
             card.addEventListener('click', (e) => {
+                if (e.target.closest('.btn-open-b2b-gate')) {
+                    e.stopPropagation();
+                    window.openB2bAuthModal();
+                    return;
+                }
                 if (e.target.closest('.btn-card-add')) {
                     e.stopPropagation();
+                    if (!Database.isB2bLoggedIn()) {
+                        window.openB2bAuthModal();
+                        return;
+                    }
                     Database.addToCart(p.id, 1);
                     updateCartUI();
-                    showToast(`Dodano do koszyka: ${p.name}`);
+                    showToast(`Dodano do koszyka: 1 op. (${packSize} szt.)`);
                     return;
                 }
                 openProductDetailsModal(p, clientPrice);
@@ -3672,10 +3692,10 @@ function initApp() {
         if (typeof Database === 'undefined') return;
         const cartDetails = Database.getCartDetails();
         const countBadge = document.getElementById('cartCountBadge');
-        if (countBadge) countBadge.innerText = cartDetails.totalItemsCount;
+        if (countBadge) countBadge.innerText = cartDetails.totalPacksCount || 0;
         
         const headerBadge = document.getElementById('headerCartBadge');
-        if (headerBadge) headerBadge.innerText = cartDetails.totalItemsCount;
+        if (headerBadge) headerBadge.innerText = cartDetails.totalPacksCount || 0;
         
         const headerTotal = document.getElementById('headerCartTotal');
         if (headerTotal) headerTotal.innerText = `${cartDetails.totalClientPrice.toFixed(2)} zł`;
@@ -3692,12 +3712,22 @@ function initApp() {
         if (!container) return;
         container.innerHTML = '';
 
+        // Automatyczne wypełnienie pól danymi zalogowanego klienta B2B
+        const b2bSession = Database.getB2bSession();
+        if (b2bSession) {
+            const nameEl = document.getElementById('checkoutName'); if (nameEl && !nameEl.value) nameEl.value = b2bSession.companyName || '';
+            const nipEl = document.getElementById('checkoutNip'); if (nipEl && !nipEl.value) nipEl.value = b2bSession.nip || '';
+            const phoneEl = document.getElementById('checkoutPhone'); if (phoneEl && !phoneEl.value) phoneEl.value = b2bSession.phone || '';
+            const emailEl = document.getElementById('checkoutEmail'); if (emailEl && !emailEl.value) emailEl.value = b2bSession.email || '';
+            const addressEl = document.getElementById('checkoutAddress'); if (addressEl && !addressEl.value) addressEl.value = b2bSession.address || '';
+        }
+
         if (cartDetails.items.length === 0) {
             container.innerHTML = `
                 <div style="text-align:center; padding:30px 10px; color:var(--text-dim);">
                     <i class="fa-solid fa-cart-arrow-down" style="font-size:36px; margin-bottom:10px; color: #64748b;"></i>
                     <p style="margin: 0; font-size: 14px; font-weight: 600;">Twój koszyk jest obecnie pusty.</p>
-                    <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Dodaj produkty z katalogu, aby złożyć zamówienie.</p>
+                    <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Dodaj zgrzewki z katalogu, aby złożyć zamówienie hurtowe.</p>
                 </div>
             `;
             const cartSummary = document.getElementById('cartSummaryTotal');
@@ -3711,47 +3741,47 @@ function initApp() {
             row.style.display = 'flex';
             row.style.justifyContent = 'space-between';
             row.style.alignItems = 'center';
-            row.style.padding = '10px 12px';
+            row.style.padding = '12px 14px';
             row.style.background = 'rgba(255, 255, 255, 0.03)';
-            row.style.borderRadius = '10px';
-            row.style.marginBottom = '8px';
+            row.style.borderRadius = '12px';
+            row.style.marginBottom = '10px';
             row.style.border = '1px solid rgba(255, 255, 255, 0.06)';
 
             row.innerHTML = `
-                <div class="cart-item-info" style="flex: 1; padding-right: 10px;">
+                <div class="cart-item-info" style="flex: 1; padding-right: 12px;">
                     <div class="cart-item-title" style="font-weight: 700; font-size: 13px; color: #fff;">${item.product.name}</div>
-                    <div class="cart-item-price" style="font-size: 11px; color: #94a3b8; margin-top: 2px;">
-                        ${item.clientUnitPrice.toFixed(2)} zł netto / ${item.product.unit || 'szt.'} 
-                        ${item.product.packSize > 1 ? `(opak. ${item.product.packSize} szt.)` : ''}
+                    <div class="cart-item-price" style="font-size: 11px; color: #94a3b8; margin-top: 3px;">
+                        <span style="color: #34d399; font-weight: 700;">${item.packageClientPrice.toFixed(2)} zł netto / zgrzewka</span> 
+                        (${item.packSize} szt. w opak. | ${item.unitClientPrice.toFixed(2)} zł/szt.)
                     </div>
                 </div>
                 <div style="display:flex; align-items:center; gap:10px;">
                     <div class="quantity-picker" style="height:32px; background: rgba(255,255,255,0.08); border-radius: 8px; display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.15);">
                         <button class="qty-btn btnMinus" style="width:28px; height:32px; background:none; border:none; color:#fff; cursor:pointer; font-weight:bold;">-</button>
-                        <input type="number" class="qtyInput" value="${item.quantity}" style="width:35px; font-size:13px; text-align:center; background:transparent; border:none; color:#fff; font-weight:700;" readonly>
+                        <input type="number" class="qtyInput" value="${item.packageCount}" style="width:35px; font-size:13px; text-align:center; background:transparent; border:none; color:#fff; font-weight:700;" readonly>
                         <button class="qty-btn btnPlus" style="width:28px; height:32px; background:none; border:none; color:#fff; cursor:pointer; font-weight:bold;">+</button>
                     </div>
-                    <div style="font-weight:800; font-size: 13px; color: #34d399; width:75px; text-align:right;">${item.itemClientTotal.toFixed(2)} zł</div>
-                    <button class="btnDeleteCartItem" style="background: none; border: none; color: #f87171; cursor: pointer; padding: 4px;" title="Usuń z koszyka">
+                    <div style="font-weight:800; font-size: 13px; color: #34d399; width:80px; text-align:right;">${item.itemClientTotal.toFixed(2)} zł</div>
+                    <button class="btnDeleteCartItem" style="background: none; border: none; color: #f87171; cursor: pointer; padding: 4px;" title="Usuń zgrzewkę z koszyka">
                         <i class="fa-solid fa-trash-can" style="font-size: 13px;"></i>
                     </button>
                 </div>
             `;
 
             row.querySelector('.btnMinus').addEventListener('click', () => {
-                Database.updateCartQuantity(item.product.id, item.quantity - 1);
+                Database.updateCartQuantity(item.product.id, item.packageCount - 1);
                 updateCartUI();
                 renderCartModal();
             });
 
             row.querySelector('.btnPlus').addEventListener('click', () => {
-                Database.updateCartQuantity(item.product.id, item.quantity + 1);
+                Database.updateCartQuantity(item.product.id, item.packageCount + 1);
                 updateCartUI();
                 renderCartModal();
             });
 
             row.querySelector('.btnDeleteCartItem').addEventListener('click', () => {
-                Database.removeFromCart(item.product.id);
+                Database.updateCartQuantity(item.product.id, 0);
                 updateCartUI();
                 renderCartModal();
             });
@@ -3760,7 +3790,9 @@ function initApp() {
         });
 
         const cartSummary = document.getElementById('cartSummaryTotal');
-        if (cartSummary) cartSummary.innerText = `${cartDetails.totalClientPrice.toFixed(2)} zł`;
+        if (cartSummary) {
+            cartSummary.innerHTML = `${cartDetails.totalClientPrice.toFixed(2)} zł <span style="font-size: 11px; font-weight: 500; color: var(--text-dim); display: block;">(${cartDetails.totalPacksCount} zgrzewek / ${cartDetails.totalPiecesCount} szt.)</span>`;
+        }
     }
     window.renderCartModal = renderCartModal;
 
@@ -3779,10 +3811,11 @@ function initApp() {
         const address = addressEl ? addressEl.value.trim() : '';
         const notes = notesEl ? notesEl.value.trim() : '';
 
-        if (!name || !phone) {
-            alert("Proszę podać Nazwę Firmy / Imię oraz Numer Telefonu!");
+        if (!name || !phone || !address) {
+            alert("Proszę podać Nazwę Firmy / Imię, Numer Telefonu oraz Adres Dostawy!");
             if (nameEl && !name) nameEl.focus();
             else if (phoneEl && !phone) phoneEl.focus();
+            else if (addressEl && !address) addressEl.focus();
             return null;
         }
 
@@ -3790,22 +3823,23 @@ function initApp() {
     }
 
     function buildOrderMessageText(customer, cartDetails, orderNumber) {
-        let msg = `🛒 *NOWE ZAMÓWIENIE B2B - KATALOG ONLINE*\n`;
+        let msg = `🛒 *NOWE ZAMÓWIENIE HURTOWE B2B - KATALOG ONLINE*\n`;
         msg += `📄 *Numer zamówienia:* ${orderNumber}\n`;
         msg += `🏢 *Klient / Firma:* ${customer.name}\n`;
+        if (customer.nip) msg += `💼 *NIP:* ${customer.nip}\n`;
         msg += `📞 *Telefon:* ${customer.phone}\n`;
         if (customer.email) msg += `✉️ *E-mail:* ${customer.email}\n`;
-        if (customer.nip) msg += `💼 *NIP:* ${customer.nip}\n`;
         if (customer.address) msg += `📍 *Adres dostawy:* ${customer.address}\n`;
         if (customer.notes) msg += `📝 *Uwagi:* ${customer.notes}\n`;
-        msg += `\n📦 *ZAMÓWIONE TOWARY:*\n`;
+        msg += `\n📦 *ZAMÓWIONE OPAKOWANIA ZBIORCZE:*\n`;
 
         cartDetails.items.forEach((i, idx) => {
             const eanStr = i.product.ean ? ` (EAN: ${i.product.ean})` : '';
-            msg += `${idx + 1}. *${i.product.name}*${eanStr}\n   ➜ ${i.quantity} x ${i.clientUnitPrice.toFixed(2)} zł = *${i.itemClientTotal.toFixed(2)} zł netto*\n`;
+            msg += `${idx + 1}. *${i.product.name}*${eanStr}\n   ➜ *${i.packageCount} zgrzewek* (${i.totalPieces} szt.) × ${i.packageClientPrice.toFixed(2)} zł/op. (${i.unitClientPrice.toFixed(2)} zł/szt.) = *${i.itemClientTotal.toFixed(2)} zł netto*\n`;
         });
 
-        msg += `\n💰 *SUMA NETTO ZAMÓWIENIA:* *${cartDetails.totalClientPrice.toFixed(2)} zł*`;
+        msg += `\n📊 *PODSUMOWANIE ILOŚCIOWE:* *${cartDetails.totalPacksCount} zgrzewek (${cartDetails.totalPiecesCount} sztuk)*\n`;
+        msg += `💰 *ŁĄCZNA SUMA NETTO:* *${cartDetails.totalClientPrice.toFixed(2)} zł*`;
         return msg;
     }
 
@@ -3829,7 +3863,7 @@ function initApp() {
         window.open(`https://wa.me/?text=${encodedWhatsApp}`, '_blank');
 
         // Wysyłka / generowanie e-mail
-        const subject = encodeURIComponent(`Zamówienie z Katalogu ${orderNum} - ${customer.name}`);
+        const subject = encodeURIComponent(`Zamówienie B2B ${orderNum} - ${customer.name} (NIP: ${customer.nip || 'nd.'})`);
         const mailtoLink = `mailto:${customer.email || ''}?subject=${subject}&body=${encodedWhatsApp}`;
         
         try {
@@ -3896,6 +3930,127 @@ function initApp() {
         updateCartUI();
         closeModal('cartModal');
         alert(`✅ Pobrano plik zamówienia (${orderNum}) na dysk!`);
+    };
+
+    // --- OBSŁUGA STREFY KLIENTA B2B (LOGOWANIE PO NIP & REJESTRACJA) ---
+    window.updateB2bHeaderUI = function() {
+        const container = document.getElementById('b2bHeaderAuthContainer');
+        if (!container) return;
+        
+        const isB2b = typeof Database !== 'undefined' && Database.isB2bLoggedIn();
+        const session = isB2b ? Database.getB2bSession() : null;
+
+        if (isB2b && session) {
+            container.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); padding: 7px 14px; border-radius: 20px; font-size: 12px; color: #34d399; font-weight: 700;">
+                    <i class="fa-solid fa-building-circle-check"></i>
+                    <span style="max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${session.companyName || 'NIP: ' + session.nip}</span>
+                    <button type="button" onclick="handleB2bLogout()" style="background: none; border: none; color: #f87171; margin-left: 6px; cursor: pointer; font-size: 11px; font-weight: 700; padding: 2px 4px;" title="Wyloguj">(Wyloguj)</button>
+                </div>
+            `;
+        } else {
+            container.innerHTML = `
+                <button type="button" onclick="openB2bAuthModal()" class="btn" style="background: linear-gradient(135deg, #8b5cf6, #6366f1); color: #fff; font-weight: 700; font-size: 12px; padding: 9px 16px; border-radius: 20px; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(139,92,246,0.3);">
+                    <i class="fa-solid fa-key"></i> Zaloguj NIP / Rejestracja
+                </button>
+            `;
+        }
+    };
+
+    window.openB2bAuthModal = function() {
+        switchB2bAuthTab('login');
+        const errEl = document.getElementById('b2bLoginErrorMsg');
+        if (errEl) errEl.innerText = '';
+        const regMsg = document.getElementById('b2bRegMsg');
+        if (regMsg) regMsg.innerText = '';
+        openModal('b2bAuthModal');
+    };
+
+    window.switchB2bAuthTab = function(tab) {
+        const loginSec = document.getElementById('b2bLoginFormSection');
+        const regSec = document.getElementById('b2bRegisterFormSection');
+        const tabBtnLogin = document.getElementById('tabBtnB2bLogin');
+        const tabBtnReg = document.getElementById('tabBtnB2bRegister');
+
+        if (tab === 'login') {
+            if (loginSec) loginSec.style.display = 'block';
+            if (regSec) regSec.style.display = 'none';
+            if (tabBtnLogin) { tabBtnLogin.style.background = 'var(--primary)'; tabBtnLogin.style.color = '#fff'; }
+            if (tabBtnReg) { tabBtnReg.style.background = 'transparent'; tabBtnReg.style.color = 'var(--text-muted)'; }
+        } else {
+            if (loginSec) loginSec.style.display = 'none';
+            if (regSec) regSec.style.display = 'block';
+            if (tabBtnLogin) { tabBtnLogin.style.background = 'transparent'; tabBtnLogin.style.color = 'var(--text-muted)'; }
+            if (tabBtnReg) { tabBtnReg.style.background = 'var(--primary)'; tabBtnReg.style.color = '#fff'; }
+        }
+    };
+
+    window.handleB2bLoginSubmit = function() {
+        const input = document.getElementById('b2bLoginNipInput');
+        const nip = input ? input.value.trim() : '';
+        const errEl = document.getElementById('b2bLoginErrorMsg');
+
+        const res = Database.loginB2bClient(nip);
+        if (res.success) {
+            closeModal('b2bAuthModal');
+            updateB2bHeaderUI();
+            if (typeof renderCatalog === 'function') renderCatalog();
+            showToast(`✅ Zalogowano pomyślnie! NIP: ${nip}`);
+        } else {
+            if (errEl) errEl.innerText = res.message;
+            if (res.notRegistered) {
+                const regNipInput = document.getElementById('b2bRegNip');
+                if (regNipInput) regNipInput.value = nip;
+            }
+        }
+    };
+
+    window.handleB2bRegisterSubmit = function() {
+        const nip = document.getElementById('b2bRegNip')?.value.trim();
+        const name = document.getElementById('b2bRegName')?.value.trim();
+        const phone = document.getElementById('b2bRegPhone')?.value.trim();
+        const email = document.getElementById('b2bRegEmail')?.value.trim();
+        const address = document.getElementById('b2bRegAddress')?.value.trim();
+        const msgEl = document.getElementById('b2bRegMsg');
+
+        if (!nip || !name || !phone || !address) {
+            if (msgEl) msgEl.innerText = 'Wypełnij wszystkie wymagane pola (NIP, Nazwa, Telefon, Adres)!';
+            return;
+        }
+
+        const res = Database.registerB2bClient({ nip, companyName: name, phone, email, address });
+        if (res.success) {
+            if (res.status === 'approved') {
+                Database.loginB2bClient(nip);
+                closeModal('b2bAuthModal');
+                updateB2bHeaderUI();
+                if (typeof renderCatalog === 'function') renderCatalog();
+                alert(res.message);
+            } else {
+                const waText = encodeURIComponent(`Dzień dobry! Zarejestrowałem firmę w katalogu B2B i proszę o aktywację dostępu:\n🏢 Firma: ${name}\n💼 NIP: ${nip}\n📞 Telefon: ${phone}\n📍 Adres: ${address}`);
+                if (msgEl) {
+                    msgEl.style.color = '#34d399';
+                    msgEl.innerText = '✅ Zgłoszenie zapisane! Otwieram WhatsApp, aby przesłać dane do hurtowni.';
+                }
+                setTimeout(() => {
+                    window.open(`https://wa.me/?text=${waText}`, '_blank');
+                    closeModal('b2bAuthModal');
+                    alert("Dziękujemy za rejestrację! Twoje zgłoszenie zostało przesłane do hurtowni. Po zatwierdzeniu otrzymasz potwierdzenie.");
+                }, 1000);
+            }
+        } else {
+            if (msgEl) {
+                msgEl.style.color = '#ef4444';
+                msgEl.innerText = res.message;
+            }
+        }
+    };
+
+    window.handleB2bLogout = function() {
+        Database.logoutB2bClient();
+        updateB2bHeaderUI();
+        if (typeof renderCatalog === 'function') renderCatalog();
+        showToast('Wylogowano ze strefy B2B.');
     };
 
     const btnShowPim = document.getElementById('btnShowPim');
@@ -5158,23 +5313,26 @@ function initApp() {
         renderMarginPreviews();
     }
 
-    document.getElementById('saveGlobalMarginBtn').addEventListener('click', () => {
-        const margins = Database.getMargins();
-        const globalVal = parseFloat(document.getElementById('globalMarginInput').value) || 15;
-        margins.globalMargin = globalVal;
+    const saveGlobalMarginBtn = document.getElementById('saveGlobalMarginBtn');
+    if (saveGlobalMarginBtn) {
+        saveGlobalMarginBtn.addEventListener('click', () => {
+            const margins = Database.getMargins();
+            const globalVal = parseFloat(document.getElementById('globalMarginInput').value) || 15;
+            margins.globalMargin = globalVal;
 
-        const catInputs = document.querySelectorAll('.catMarginInput');
-        catInputs.forEach(input => {
-            const cat = input.getAttribute('data-cat');
-            const val = parseFloat(input.value) || globalVal;
-            if (!margins.categoryMargins) margins.categoryMargins = {};
-            margins.categoryMargins[cat] = val;
+            const catInputs = document.querySelectorAll('.catMarginInput');
+            catInputs.forEach(input => {
+                const cat = input.getAttribute('data-cat');
+                const val = parseFloat(input.value) || globalVal;
+                if (!margins.categoryMargins) margins.categoryMargins = {};
+                margins.categoryMargins[cat] = val;
+            });
+
+            Database.saveMargins(margins);
+            alert("Zapisano ustawienia marży!");
+            renderMarginsManager();
         });
-
-        Database.saveMargins(margins);
-        alert("Zapisano ustawienia marży!");
-        renderMarginsManager();
-    });
+    }
 
     function renderMarginPreviews() {
         const products = Database.getProducts();
@@ -6123,6 +6281,119 @@ function initApp() {
         alert(`✅ Nowy kod PIN (${newPin}) został pomyślnie zapisany!`);
     };
 
+    // --- OBSŁUGA BAZY KLIENTÓW B2B W ADMIN.HTML ---
+    window.renderB2bClientsAdminView = function() {
+        const tbody = document.getElementById('b2bClientsAdminTableBody');
+        if (!tbody || typeof Database === 'undefined') return;
+        tbody.innerHTML = '';
+
+        const clients = Database.getB2bClients();
+        if (clients.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 30px; color: var(--text-dim);">
+                        Brak zarejestrowanych klientów B2B. Dodaj pierwszą firmę ręcznie lub poczekaj na zgłoszenia z formularza.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        clients.forEach(c => {
+            const tr = document.createElement('tr');
+            tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+            const isApproved = c.status === 'approved';
+
+            const statusBadge = isApproved 
+                ? `<span style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;"><i class="fa-solid fa-check"></i> Aktywny</span>`
+                : `<span style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;"><i class="fa-solid fa-clock"></i> Oczekuje</span>`;
+
+            tr.innerHTML = `
+                <td style="padding: 12px; font-weight: 800; color: #a78bfa; letter-spacing: 0.5px;">${c.nip}</td>
+                <td style="padding: 12px;">
+                    <div style="font-weight: 700; color: #fff;">${c.companyName}</div>
+                    ${c.email ? `<div style="font-size: 11px; color: var(--text-dim);">${c.email}</div>` : ''}
+                </td>
+                <td style="padding: 12px; color: #cbd5e1;">${c.phone || '-'}</td>
+                <td style="padding: 12px; color: #cbd5e1; max-width: 200px;">${c.address || '-'}</td>
+                <td style="padding: 12px; color: var(--text-dim); font-size: 11px;">${c.registeredAt || '-'}</td>
+                <td style="padding: 12px; text-align: center;">${statusBadge}</td>
+                <td style="padding: 12px; text-align: right; white-space: nowrap;">
+                    ${!isApproved ? `
+                        <button onclick="approveB2bClientAdmin('${c.nip}')" class="btn" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-size: 11px; font-weight: 700; padding: 6px 12px; border-radius: 8px; border: none; cursor: pointer; margin-right: 6px;" title="Aktywuj dostęp dla tego NIP">
+                            <i class="fa-solid fa-check"></i> Aktywuj
+                        </button>
+                    ` : ''}
+                    <button onclick="sendB2bActivationWhatsApp('${c.nip}', '${c.phone}', '${c.companyName}')" class="btn" style="background: #25D366; color: #fff; font-size: 11px; font-weight: 700; padding: 6px 10px; border-radius: 8px; border: none; cursor: pointer; margin-right: 6px;" title="Wyślij potwierdzenie na WhatsApp">
+                        <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                    </button>
+                    <button onclick="deleteB2bClientAdmin('${c.nip}')" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; font-size: 11px; padding: 6px 8px; border-radius: 8px; cursor: pointer;" title="Usuń klienta">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    };
+
+    window.approveB2bClientAdmin = function(nip) {
+        const client = Database.approveB2bClient(nip);
+        if (client) {
+            renderB2bClientsAdminView();
+            showToast(`✅ Aktywowano klienta NIP: ${nip}`);
+            if (client.phone && confirm(`Czy chcesz teraz wysłać wiadomość WhatsApp do klienta (${client.companyName}) z informacją o aktywacji?`)) {
+                sendB2bActivationWhatsApp(client.nip, client.phone, client.companyName);
+            }
+        }
+    };
+
+    window.deleteB2bClientAdmin = function(nip) {
+        if (confirm(`Czy na pewno chcesz usunąć klienta NIP: ${nip}?`)) {
+            Database.rejectB2bClient(nip);
+            renderB2bClientsAdminView();
+            showToast(`Usunięto klienta NIP: ${nip}`);
+        }
+    };
+
+    window.sendB2bActivationWhatsApp = function(nip, phone, name) {
+        const cleanPhone = String(phone || '').replace(/[^0-9]/g, '');
+        const msg = encodeURIComponent(`Dzień dobry! Informujemy, że konto firmy *${name || 'Państwa firmy'}* (NIP: *${nip}*) w hurtowni zostało pomyślnie *aktywowane*! 🎉\n\nMożna już zalogować się swoim numerem NIP i składać zamówienia w cenach hurtowych pod adresem:\n👉 https://wasylkuptsov-commits.github.io/from-ua/\n\nZapraszamy do współpracy!`);
+        const url = cleanPhone ? `https://wa.me/${cleanPhone}?text=${msg}` : `https://wa.me/?text=${msg}`;
+        window.open(url, '_blank');
+    };
+
+    window.openManualAddB2bClientModal = function() {
+        document.getElementById('manualB2bNip').value = '';
+        document.getElementById('manualB2bName').value = '';
+        document.getElementById('manualB2bPhone').value = '';
+        document.getElementById('manualB2bEmail').value = '';
+        document.getElementById('manualB2bAddress').value = '';
+        openModal('manualAddB2bClientModal');
+    };
+
+    window.saveManualB2bClient = function() {
+        const nip = document.getElementById('manualB2bNip')?.value.trim();
+        const name = document.getElementById('manualB2bName')?.value.trim();
+        const phone = document.getElementById('manualB2bPhone')?.value.trim();
+        const email = document.getElementById('manualB2bEmail')?.value.trim();
+        const address = document.getElementById('manualB2bAddress')?.value.trim();
+
+        if (!nip || !name || !phone) {
+            alert("Podaj co najmniej NIP (10 cyfr), Nazwę Firmy oraz Telefon!");
+            return;
+        }
+
+        const res = Database.registerB2bClient({ nip, companyName: name, phone, email, address });
+        if (res.success) {
+            Database.approveB2bClient(nip);
+            closeModal('manualAddB2bClientModal');
+            renderB2bClientsAdminView();
+            alert(`✅ Klient ${name} (NIP: ${nip}) został pomyślnie dodany i aktywowany!`);
+        } else {
+            alert(res.message);
+        }
+    };
+
     window.switchAdminTab = function(sectionId) {
         document.querySelectorAll('.view-section').forEach(sec => {
             sec.classList.remove('active');
@@ -6144,6 +6415,7 @@ function initApp() {
 
         if (sectionId === 'view-assortment' && typeof renderPimView === 'function') renderPimView();
         if (sectionId === 'view-margins' && typeof populateCategoryMargins === 'function') populateCategoryMargins();
+        if (sectionId === 'view-b2b-clients' && typeof renderB2bClientsAdminView === 'function') renderB2bClientsAdminView();
         if (sectionId === 'view-orders' && typeof renderOrdersView === 'function') renderOrdersView();
         if (sectionId === 'view-suppliers' && typeof populateSuppliersCrm === 'function') populateSuppliersCrm();
     };
@@ -6163,6 +6435,41 @@ function initApp() {
 
     // Inicjalizacja zależna od podstrony (index.html vs admin.html)
     const isAdminPage = !!document.getElementById('adminPinLockScreen');
+    // --- OBSŁUGA MOTYWÓW KATALOGU (DARK B2B PRO VS CLEAN MINIMALIST) ---
+    window.toggleCatalogTheme = function() {
+        const isLight = document.body.classList.contains('theme-light');
+        if (isLight) {
+            document.body.classList.remove('theme-light');
+            localStorage.setItem('porownywarka_theme', 'dark');
+            showToast('Przełączono na tryb ciemny (Dark B2B Pro)');
+        } else {
+            document.body.classList.add('theme-light');
+            localStorage.setItem('porownywarka_theme', 'light');
+            showToast('Przełączono na tryb jasny (Clean Minimalist)');
+        }
+        updateThemeToggleUI();
+    };
+
+    window.applySavedTheme = function() {
+        const savedTheme = localStorage.getItem('porownywarka_theme');
+        if (savedTheme === 'light') {
+            document.body.classList.add('theme-light');
+        } else {
+            document.body.classList.remove('theme-light');
+        }
+        updateThemeToggleUI();
+    };
+
+    function updateThemeToggleUI() {
+        const btn = document.getElementById('themeToggleBtn');
+        if (!btn) return;
+        const isLight = document.body.classList.contains('theme-light');
+        btn.innerHTML = isLight 
+            ? '<i class="fa-solid fa-moon" style="color: #6366f1;"></i>' 
+            : '<i class="fa-solid fa-sun" style="color: #fbbf24;"></i>';
+        btn.title = isLight ? 'Przełącz na tryb ciemny' : 'Przełącz na tryb jasny';
+    }
+
     if (isAdminPage) {
         const isAuth = sessionStorage.getItem('admin_authenticated') === 'true';
         const lockScreen = document.getElementById('adminPinLockScreen');
@@ -6184,6 +6491,8 @@ function initApp() {
         }
     } else {
         // Czysty katalog klienta (index.html)
+        if (typeof applySavedTheme === 'function') applySavedTheme();
+        if (typeof updateB2bHeaderUI === 'function') updateB2bHeaderUI();
         if (typeof renderCatalog === 'function') renderCatalog();
         if (typeof populateCategories === 'function') populateCategories();
         if (typeof updateCartUI === 'function') updateCartUI();

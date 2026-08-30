@@ -47,7 +47,16 @@
                 <p id="appSubtitle">Wygodne zamówienia hurtowe i detaliczne</p>
             </div>
             
-            <div class="header-actions">
+            <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
+                <div id="b2bHeaderAuthContainer">
+                    <!-- Dynamiczny przycisk logowania lub badge firmy -->
+                </div>
+
+                <!-- Przełącznik motywu Jasny / Ciemny -->
+                <button type="button" id="themeToggleBtn" onclick="toggleCatalogTheme()" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 15px; transition: all 0.2s;" title="Przełącz motyw">
+                    <i class="fa-solid fa-sun"></i>
+                </button>
+
                 <button class="btn btn-cart-header" id="headerCartBtn" onclick="openCartModalFromHeader()" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-weight: 700; font-size: 13px; padding: 10px 18px; border-radius: 25px; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);">
                     <i class="fa-solid fa-cart-shopping"></i> <span>Koszyk</span>
                     <span id="headerCartBadge" style="background: #fff; color: #059669; padding: 2px 7px; border-radius: 12px; font-size: 11px; font-weight: 800;">0</span>
@@ -221,6 +230,84 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODAL LOGOWANIA I REJESTRACJI B2B ================= -->
+    <div id="b2bAuthModal" class="modal">
+        <div class="modal-content" style="max-width: 480px; padding: 26px; border-radius: 20px; background: #0f1120; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 25px 60px rgba(0,0,0,0.85);">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+                <h3 style="margin: 0; font-size: 18px; color: #fff; display: flex; align-items: center; gap: 10px;">
+                    <i class="fa-solid fa-building-shield" style="color: #8b5cf6;"></i> Strefa Klienta B2B
+                </h3>
+                <button type="button" class="modal-close" onclick="closeModal('b2bAuthModal')" style="background:none; border:none; color:var(--text-muted); font-size:22px; cursor:pointer;">&times;</button>
+            </div>
+
+            <!-- Zakładki Logowanie / Rejestracja -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                <button type="button" id="tabBtnB2bLogin" onclick="switchB2bAuthTab('login')" style="background: var(--primary); color: #fff; border: none; padding: 9px; border-radius: 9px; font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.2s ease;">
+                    <i class="fa-solid fa-right-to-bracket"></i> Logowanie NIP
+                </button>
+                <button type="button" id="tabBtnB2bRegister" onclick="switchB2bAuthTab('register')" style="background: transparent; color: var(--text-muted); border: none; padding: 9px; border-radius: 9px; font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.2s ease;">
+                    <i class="fa-solid fa-user-plus"></i> Nowa Firma
+                </button>
+            </div>
+
+            <!-- FORMULARZ 1: LOGOWANIE PO NIP -->
+            <div id="b2bLoginFormSection">
+                <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.4;">
+                    Wpisz <strong>10-cyfrowy NIP</strong> swojej firmy, aby odblokować dostęp do cen hurtowych i zamawiania.
+                </p>
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label for="b2bLoginNipInput" style="font-size: 12px; font-weight: 700; color: #c4b5fd; display: block; margin-bottom: 6px;">Numer NIP Twojej Firmy *</label>
+                    <input type="text" id="b2bLoginNipInput" class="form-control" placeholder="np. 1234567890" maxlength="10" style="font-size: 16px; font-weight: 700; letter-spacing: 1.5px; text-align: center;">
+                </div>
+                <div id="b2bLoginErrorMsg" style="color: #ef4444; font-size: 12px; font-weight: 600; margin-bottom: 14px; min-height: 18px; text-align: center;"></div>
+                
+                <button type="button" onclick="handleB2bLoginSubmit()" class="btn" style="width: 100%; background: linear-gradient(135deg, #8b5cf6, #6366f1); color: #fff; font-weight: 800; font-size: 14px; padding: 13px; border-radius: 12px; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(139,92,246,0.4);">
+                    <i class="fa-solid fa-unlock-keyhole"></i> Zaloguj i Pokaż Ceny
+                </button>
+
+                <div style="margin-top: 15px; text-align: center;">
+                    <span style="font-size: 12px; color: var(--text-dim);">Nie masz jeszcze konta?</span>
+                    <button type="button" onclick="switchB2bAuthTab('register')" style="background: none; border: none; color: #a78bfa; font-weight: 700; font-size: 12px; cursor: pointer; margin-left: 4px; text-decoration: underline;">Zarejestruj firmę</button>
+                </div>
+            </div>
+
+            <!-- FORMULARZ 2: REJESTRACJA NOWEJ FIRMY -->
+            <div id="b2bRegisterFormSection" style="display: none;">
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.4;">
+                    Wypełnij formularz. Hurtownia aktywuje dostęp Twojej firmy po krótkiej weryfikacji.
+                </p>
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label for="b2bRegNip" style="font-size: 11px; font-weight: 700; color: #c4b5fd; display: block; margin-bottom: 4px;">Numer NIP *</label>
+                    <input type="text" id="b2bRegNip" class="form-control" placeholder="10 cyfr bez kresek" maxlength="10" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label for="b2bRegName" style="font-size: 11px; font-weight: 700; color: #c4b5fd; display: block; margin-bottom: 4px;">Pełna Nazwa Firmy / Imię i Nazwisko *</label>
+                    <input type="text" id="b2bRegName" class="form-control" placeholder="np. Sklep Spożywczy ABC Sp. z o.o." required>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <div class="form-group" style="margin: 0;">
+                        <label for="b2bRegPhone" style="font-size: 11px; font-weight: 700; color: #c4b5fd; display: block; margin-bottom: 4px;">Telefon WhatsApp *</label>
+                        <input type="tel" id="b2bRegPhone" class="form-control" placeholder="np. 500 600 700" required>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label for="b2bRegEmail" style="font-size: 11px; font-weight: 700; color: #c4b5fd; display: block; margin-bottom: 4px;">E-mail (opcjonalnie)</label>
+                        <input type="email" id="b2bRegEmail" class="form-control" placeholder="np. biuro@firma.pl">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label for="b2bRegAddress" style="font-size: 11px; font-weight: 700; color: #c4b5fd; display: block; margin-bottom: 4px;">Adres Dostawy / Miasto *</label>
+                    <input type="text" id="b2bRegAddress" class="form-control" placeholder="np. ul. Towarowa 12, Warszawa" required>
+                </div>
+
+                <div id="b2bRegMsg" style="color: #ef4444; font-size: 12px; font-weight: 600; margin-bottom: 12px; min-height: 18px; text-align: center;"></div>
+
+                <button type="button" onclick="handleB2bRegisterSubmit()" class="btn" style="width: 100%; background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-weight: 800; font-size: 14px; padding: 13px; border-radius: 12px; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(16,185,129,0.35);">
+                    <i class="fa-solid fa-paper-plane"></i> Prześlij Zgłoszenie Rejestracyjne
+                </button>
             </div>
         </div>
     </div>

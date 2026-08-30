@@ -2238,29 +2238,37 @@ const Database = {
         return JSON.parse(localStorage.getItem(DB_KEYS.CART)) || [];
     },
 
+    // --- KOSZYK ZAMÓWIEŃ KLIENTA (HURTOWE OPAKOWANIA ZBIORCZE) ---
+    getCart() {
+        return JSON.parse(localStorage.getItem(DB_KEYS.CART)) || [];
+    },
+
     saveCart(cart) {
         localStorage.setItem(DB_KEYS.CART, JSON.stringify(cart));
     },
 
-    addToCart(productId, quantity = 1) {
+    // Dodanie do koszyka określonej liczby OPAKOWAŃ ZBIORCZYCH (zgrzewek / kartonów)
+    addToCart(productId, packageQuantity = 1) {
         const cart = this.getCart();
+        const cleanQty = Math.max(1, parseInt(packageQuantity) || 1);
         const index = cart.findIndex(item => item.productId === productId);
         if (index > -1) {
-            cart[index].quantity += quantity;
+            cart[index].quantity += cleanQty;
         } else {
-            cart.push({ productId, quantity });
+            cart.push({ productId, quantity: cleanQty });
         }
         this.saveCart(cart);
         return cart;
     },
 
-    updateCartQuantity(productId, quantity) {
+    updateCartQuantity(productId, packageQuantity) {
         let cart = this.getCart();
-        if (quantity <= 0) {
+        const cleanQty = parseInt(packageQuantity) || 0;
+        if (cleanQty <= 0) {
             cart = cart.filter(item => item.productId !== productId);
         } else {
             const item = cart.find(i => i.productId === productId);
-            if (item) item.quantity = quantity;
+            if (item) item.quantity = cleanQty;
         }
         this.saveCart(cart);
         return cart;
@@ -2270,43 +2278,57 @@ const Database = {
         localStorage.removeItem(DB_KEYS.CART);
     },
 
-    // Wyliczenie szczegółów koszyka z przeliczoną marżą
+    // Wyliczenie szczegółów koszyka bazując na pełnych opakowaniach (zgrzewkach)
     getCartDetails() {
         const cart = this.getCart();
         const products = this.getProducts();
         let totalClient = 0;
         let totalWholesale = 0;
-        let totalItemsCount = 0;
+        let totalPacksCount = 0;
+        let totalPiecesCount = 0;
 
         const items = cart.map(cartItem => {
             const product = products.find(p => p.id === cartItem.productId);
             if (!product) return null;
 
+            const packSize = parseInt(product.packSize) > 0 ? parseInt(product.packSize) : 1;
+            const packsQty = parseInt(cartItem.quantity) || 1;
+            const totalPieces = packsQty * packSize;
+
             const cheapestWholesale = this.getCheapestWholesaleOffer(product);
             const highestWholesale = this.getHighestWholesaleOffer(product);
             
-            // Logika biznesowa: Płacisz hurtowo cenę od najtańszego dostawcy...
-            const wholesaleUnitPrice = cheapestWholesale ? cheapestWholesale.price : 0;
+            // Cena hurtowa zakupu za 1 sztukę
+            const unitWholesalePrice = cheapestWholesale ? cheapestWholesale.price : 0;
             
-            // ...ale klientowi kalkulujesz cenę detaliczną bazując na najdroższym dostawcy na rynku, aby zmaksymalizować swój zysk!
-            const baseWholesaleForClient = highestWholesale ? highestWholesale.price : wholesaleUnitPrice;
-            const clientUnitPrice = this.calculateClientPrice(baseWholesaleForClient, product);
+            // Cena sprzedaży dla klienta za 1 sztukę (z marżą)
+            const baseWholesaleForClient = highestWholesale ? highestWholesale.price : unitWholesalePrice;
+            const unitClientPrice = this.calculateClientPrice(baseWholesaleForClient, product);
             
-            const itemClientTotal = clientUnitPrice * cartItem.quantity;
-            const itemWholesaleTotal = wholesaleUnitPrice * cartItem.quantity;
+            // Ceny za całe opakowanie zbiorcze (zgrzewkę)
+            const packClientPrice = Math.round(unitClientPrice * packSize * 100) / 100;
+            const packWholesalePrice = Math.round(unitWholesalePrice * packSize * 100) / 100;
+
+            const itemClientTotal = Math.round(packsQty * packClientPrice * 100) / 100;
+            const itemWholesaleTotal = Math.round(packsQty * packWholesalePrice * 100) / 100;
 
             totalClient += itemClientTotal;
             totalWholesale += itemWholesaleTotal;
-            totalItemsCount += cartItem.quantity;
+            totalPacksCount += packsQty;
+            totalPiecesCount += totalPieces;
 
             return {
                 product: product,
-                quantity: cartItem.quantity,
-                wholesaleUnitPrice: wholesaleUnitPrice,
-                clientUnitPrice: clientUnitPrice,
+                packageCount: packsQty,
+                packSize: packSize,
+                totalPieces: totalPieces,
+                unitClientPrice: unitClientPrice,
+                packageClientPrice: packClientPrice,
+                unitWholesalePrice: unitWholesalePrice,
+                packageWholesalePrice: packWholesalePrice,
                 itemClientTotal: itemClientTotal,
                 itemWholesaleTotal: itemWholesaleTotal,
-                marginProfit: itemClientTotal - itemWholesaleTotal
+                marginProfit: Math.round((itemClientTotal - itemWholesaleTotal) * 100) / 100
             };
         }).filter(Boolean);
 
@@ -2315,8 +2337,119 @@ const Database = {
             totalClientPrice: Math.round(totalClient * 100) / 100,
             totalWholesalePrice: Math.round(totalWholesale * 100) / 100,
             totalProfit: Math.round((totalClient - totalWholesale) * 100) / 100,
-            totalItemsCount: totalItemsCount
+            totalPacksCount: totalPacksCount,
+            totalPiecesCount: totalPiecesCount,
+            totalItemsCount: totalPacksCount // kompatybilność wsteczna dla badge
         };
+    },
+
+    // --- BAZA KLIENTÓW B2B & AUTORYZACJA PO NIP ---
+    getB2bClients() {
+        let clients = JSON.parse(localStorage.getItem('porownywarka_b2b_clients'));
+        if (!clients || !Array.isArray(clients) || clients.length === 0) {
+            clients = [
+                {
+                    id: 'client_demo_1',
+                    nip: '1234567890',
+                    companyName: 'Sklep Spożywczy Demo Sp. z o.o.',
+                    address: 'ul. Marszałkowska 10, Warszawa',
+                    phone: '+48 500 600 700',
+                    email: 'biuro@sklepdemo.pl',
+                    notes: 'Klient demonstracyjny z pełnym dostępem',
+                    status: 'approved',
+                    registeredAt: '2026-08-30 10:00',
+                    approvedAt: '2026-08-30 10:05'
+                }
+            ];
+            localStorage.setItem('porownywarka_b2b_clients', JSON.stringify(clients));
+        }
+        return clients;
+    },
+
+    saveB2bClients(clients) {
+        localStorage.setItem('porownywarka_b2b_clients', JSON.stringify(clients));
+    },
+
+    registerB2bClient({ nip, companyName, address, phone, email, notes }) {
+        const cleanNip = String(nip || '').replace(/[^0-9]/g, '').trim();
+        if (!cleanNip || cleanNip.length !== 10) {
+            return { success: false, message: 'Nieprawidłowy numer NIP (musi zawierać dokładnie 10 cyfr)!' };
+        }
+        const clients = this.getB2bClients();
+        const existing = clients.find(c => c.nip === cleanNip);
+        if (existing) {
+            if (existing.status === 'approved') {
+                return { success: true, status: 'approved', client: existing, message: 'Twój NIP jest już zarejestrowany i aktywny! Możesz się od razu zalogować.' };
+            } else {
+                return { success: false, status: 'pending', message: 'Twoje zgłoszenie rejestracyjne oczekuje na zatwierdzenie przez hurtownię.' };
+            }
+        }
+
+        const newClient = {
+            id: 'client_' + Date.now(),
+            nip: cleanNip,
+            companyName: companyName || `Firma (NIP: ${cleanNip})`,
+            address: address || '',
+            phone: phone || '',
+            email: email || '',
+            notes: notes || '',
+            status: 'pending', // 'pending' | 'approved' | 'blocked'
+            registeredAt: new Date().toLocaleString('pl-PL')
+        };
+        clients.unshift(newClient);
+        this.saveB2bClients(clients);
+        return { success: true, status: 'pending', client: newClient, message: 'Zgłoszenie zostało wysłane! Hurtownia aktywuje Twoje konto w ciągu kilku minut.' };
+    },
+
+    approveB2bClient(nip) {
+        const cleanNip = String(nip).replace(/[^0-9]/g, '').trim();
+        const clients = this.getB2bClients();
+        const client = clients.find(c => c.nip === cleanNip);
+        if (client) {
+            client.status = 'approved';
+            client.approvedAt = new Date().toLocaleString('pl-PL');
+            this.saveB2bClients(clients);
+            return client;
+        }
+        return null;
+    },
+
+    rejectB2bClient(nip) {
+        const cleanNip = String(nip).replace(/[^0-9]/g, '').trim();
+        let clients = this.getB2bClients();
+        clients = clients.filter(c => c.nip !== cleanNip);
+        this.saveB2bClients(clients);
+    },
+
+    loginB2bClient(nip) {
+        const cleanNip = String(nip || '').replace(/[^0-9]/g, '').trim();
+        if (!cleanNip) return { success: false, message: 'Wpisz 10-cyfrowy NIP firmy!' };
+        
+        const clients = this.getB2bClients();
+        const client = clients.find(c => c.nip === cleanNip);
+        if (!client) {
+            return { success: false, notRegistered: true, message: 'Ten NIP nie jest jeszcze zarejestrowany w naszej hurtowni. Wypełnij krótki formularz rejestracji.' };
+        }
+        if (client.status !== 'approved') {
+            return { success: false, pending: true, message: 'Twoje konto czeka na zatwierdzenie przez hurtownię. Otrzymasz powiadomienie WhatsApp po aktywacji.' };
+        }
+        sessionStorage.setItem('porownywarka_b2b_session', JSON.stringify(client));
+        return { success: true, client: client };
+    },
+
+    getB2bSession() {
+        try {
+            const s = sessionStorage.getItem('porownywarka_b2b_session');
+            return s ? JSON.parse(s) : null;
+        } catch(e) { return null; }
+    },
+
+    logoutB2bClient() {
+        sessionStorage.removeItem('porownywarka_b2b_session');
+    },
+
+    isB2bLoggedIn() {
+        return !!this.getB2bSession();
     },
 
     // --- ZAMÓWIENIA KLIENTÓW (ORDERS) ---
@@ -2333,18 +2466,26 @@ const Database = {
             id: 'ord_' + Date.now(),
             orderNumber: 'ZAM-' + Math.floor(100000 + Math.random() * 900000),
             date: new Date().toLocaleString('pl-PL'),
-            customerName: customerInfo.name || 'Klient Anonimowy',
+            customerName: customerInfo.name || 'Klient B2B',
+            customerNip: customerInfo.nip || '',
             customerPhone: customerInfo.phone || '',
+            customerEmail: customerInfo.email || '',
             customerAddress: customerInfo.address || '',
             customerNotes: customerInfo.notes || '',
+            totalPacksCount: cartDetails.totalPacksCount,
+            totalPiecesCount: cartDetails.totalPiecesCount,
             items: cartDetails.items.map(i => ({
                 productId: i.product.id,
                 name: i.product.name,
                 ean: i.product.ean,
-                quantity: i.quantity,
-                unit: i.product.unit,
-                clientUnitPrice: i.clientUnitPrice,
-                wholesaleUnitPrice: i.wholesaleUnitPrice,
+                packageCount: i.packageCount,
+                packSize: i.packSize,
+                totalPieces: i.totalPieces,
+                unit: i.product.unit || 'szt.',
+                packageClientPrice: i.packageClientPrice,
+                unitClientPrice: i.unitClientPrice,
+                packageWholesalePrice: i.packageWholesalePrice,
+                unitWholesalePrice: i.unitWholesalePrice,
                 itemClientTotal: i.itemClientTotal
             })),
             totalClientPrice: cartDetails.totalClientPrice,
