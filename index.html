@@ -124,17 +124,27 @@
                             </div>
                         </div>
 
-                        <!-- PARAMETRY CENOWE I LOGISTYCZNE -->
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; background: rgba(0,0,0,0.25); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
+                        <!-- BRAMKA CENOWA B2B DLA NIEZALOGOWANYCH -->
+                        <div id="modalB2bLockedGateSection" style="display: none; background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(139, 92, 246, 0.35); border-radius: 14px; padding: 18px; text-align: center;">
+                            <div style="font-size: 26px; color: #a78bfa; margin-bottom: 6px;"><i class="fa-solid fa-lock"></i></div>
+                            <div style="font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 4px;">Ceny hurtowe dostępne po zalogowaniu</div>
+                            <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 14px 0;">Zaloguj się numerem NIP lub zgłoś firmę do weryfikacji, aby sprawdzić ceny zgrzewek i składać zamówienia.</p>
+                            <button type="button" onclick="closeModal('productDetailsModal'); openB2bAuthModal();" class="btn" style="width: 100%; background: linear-gradient(135deg, #8b5cf6, #6366f1); color: #fff; font-weight: 700; font-size: 13px; padding: 12px 18px; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.35);">
+                                <i class="fa-solid fa-key"></i> Zaloguj NIP / Rejestracja Firmy
+                            </button>
+                        </div>
+
+                        <!-- PARAMETRY CENOWE I LOGISTYCZNE DLA ZALOGOWANYCH -->
+                        <div id="modalB2bPriceSection" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; background: rgba(0,0,0,0.25); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
                             <div>
-                                <div style="font-size: 10px; text-transform: uppercase; color: var(--text-dim); font-weight: 700;">Cena Netto / Szt.</div>
-                                <div id="modalProductPrice" style="font-size: 22px; font-weight: 800; color: #34d399; margin-top: 2px;">0.00 zł</div>
-                                <div id="modalProductPriceGross" style="font-size: 11px; color: var(--text-dim);">brutto: 0.00 zł</div>
+                                <div style="font-size: 10px; text-transform: uppercase; color: #10b981; font-weight: 700;">Cena za zgrzewkę</div>
+                                <div id="modalProductPackagePrice" style="font-size: 22px; font-weight: 800; color: #34d399; margin-top: 2px;">0.00 zł</div>
+                                <div id="modalProductPrice" style="font-size: 11px; color: var(--text-dim);">0.00 zł netto / szt.</div>
+                                <div id="modalProductPriceGross" style="font-size: 10px; color: var(--text-dim);">brutto: 0.00 zł</div>
                             </div>
                             <div>
                                 <div style="font-size: 10px; text-transform: uppercase; color: var(--text-dim); font-weight: 700;">Pakowanie Zbiorcze</div>
                                 <div id="modalProductPackInfo" style="font-size: 15px; font-weight: 700; color: #38bdf8; margin-top: 2px;">1 szt.</div>
-                                <div id="modalProductPackagePrice" style="font-size: 11px; color: #fcd34d;">-</div>
                             </div>
                         </div>
 

@@ -3474,25 +3474,44 @@ function initApp() {
         if (vatEl) vatEl.innerText = vatRate;
 
         // 4. Ceny i pakowanie
+        const isB2b = typeof Database !== 'undefined' && Database.isB2bLoggedIn();
+        const gateSection = document.getElementById('modalB2bLockedGateSection');
+        const priceSection = document.getElementById('modalB2bPriceSection');
+        const clientActions = document.getElementById('modalClientActions');
+
+        const packSize = parseInt(product.packSize) > 0 ? parseInt(product.packSize) : 1;
         const numPrice = typeof defaultClientPrice === 'number' ? defaultClientPrice : (parseFloat(defaultClientPrice) || 0);
         const vatNum = parseFloat(vatRate.replace(/[^0-9.]/g, '')) || 5;
         const grossPrice = (numPrice * (1 + vatNum / 100)).toFixed(2);
-
-        const priceEl = document.getElementById('modalProductPrice');
-        if (priceEl) priceEl.innerText = `${numPrice.toFixed(2)} zł / ${product.unit || 'szt.'}`;
-
-        const grossEl = document.getElementById('modalProductPriceGross');
-        if (grossEl) grossEl.innerText = `Cena brutto: ${grossPrice} zł`;
+        const packClientPrice = numPrice * packSize;
 
         const packEl = document.getElementById('modalProductPackInfo');
-        if (packEl) packEl.innerText = `${product.packSize || 1} ${product.unit || 'szt.'}`;
+        if (packEl) packEl.innerText = `${packSize} ${product.unit || 'szt.'}`;
 
-        const pkgPriceEl = document.getElementById('modalProductPackagePrice');
-        if (pkgPriceEl) {
-            if (product.packSize && product.packSize > 1) {
-                pkgPriceEl.innerText = `(${(numPrice * product.packSize).toFixed(2)} zł za karton / zgrzewkę)`;
-            } else {
-                pkgPriceEl.innerText = `(Pakowane pojedynczo)`;
+        if (!isB2b) {
+            // Niezalogowany gość - ukrywamy ceny i koszyk, pokazujemy bramkę B2B
+            if (gateSection) gateSection.style.display = 'block';
+            if (priceSection) priceSection.style.display = 'none';
+            if (clientActions) clientActions.style.display = 'none';
+        } else {
+            // Zalogowany odbiorca B2B - pokazujemy ceny hurtowe zgrzewki i koszyk
+            if (gateSection) gateSection.style.display = 'none';
+            if (priceSection) priceSection.style.display = 'grid';
+            if (clientActions) clientActions.style.display = 'flex';
+
+            const pkgPriceEl = document.getElementById('modalProductPackagePrice');
+            if (pkgPriceEl) {
+                pkgPriceEl.innerText = `${packClientPrice.toFixed(2)} zł netto`;
+            }
+
+            const priceEl = document.getElementById('modalProductPrice');
+            if (priceEl) {
+                priceEl.innerText = `${numPrice.toFixed(2)} zł netto / ${product.unit || 'szt.'}`;
+            }
+
+            const grossEl = document.getElementById('modalProductPriceGross');
+            if (grossEl) {
+                grossEl.innerText = `(brutto: ${(packClientPrice * (1 + vatNum / 100)).toFixed(2)} zł / zgrzewka)`;
             }
         }
 
@@ -3659,12 +3678,17 @@ function initApp() {
     const modalAddBtn = document.getElementById('modalAddToCartBtn');
     if (modalAddBtn) {
         modalAddBtn.addEventListener('click', () => {
+            if (!Database.isB2bLoggedIn()) {
+                closeModal('productDetailsModal');
+                window.openB2bAuthModal();
+                return;
+            }
             if (!selectedProductIdForModal) return;
             const qty = parseInt(document.getElementById('modalQtyInput').value) || 1;
             Database.addToCart(selectedProductIdForModal, qty);
             updateCartUI();
             closeModal('productDetailsModal');
-            showToast('Dodano towar do koszyka!');
+            showToast(`Dodano towar do koszyka: ${qty} op.`);
         });
     }
 
