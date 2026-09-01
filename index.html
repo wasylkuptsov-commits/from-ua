@@ -74,9 +74,15 @@
                 </div>
             </div>
 
-            <div class="search-wrapper">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="catalogSearchInput" class="search-input" placeholder="Szukaj po nazwie towaru, EAN lub smaku...">
+            <div class="search-category-row" style="display: flex; gap: 10px; align-items: stretch; margin-bottom: 12px;">
+                <div class="search-wrapper" style="flex: 1; margin-bottom: 0;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="catalogSearchInput" class="search-input" placeholder="Szukaj po nazwie towaru, EAN lub smaku...">
+                </div>
+                <button type="button" id="openCategoryDrawerBtn" onclick="openCategoryDrawer()" style="background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(99,102,241,0.25)); border: 1px solid rgba(139,92,246,0.45); color: #c4b5fd; font-weight: 700; font-size: 13px; padding: 0 16px; border-radius: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; white-space: nowrap; transition: all 0.2s;" title="Otwórz pełną listę kategorii">
+                    <i class="fa-solid fa-bars-staggered"></i> <span class="hide-on-mobile">Kategorie</span>
+                    <span id="drawerTotalCatsBadge" style="background: rgba(139,92,246,0.4); color: #fff; padding: 2px 7px; border-radius: 10px; font-size: 11px; font-weight: 800;">38</span>
+                </button>
             </div>
 
             <div class="categories-bar" id="categoriesBar">
@@ -321,6 +327,37 @@
             </div>
         </div>
     </div>
+
+    <!-- ================= WYSUWANA SZUFLADA KATEGORII (CATEGORY DRAWER) ================= -->
+    <div id="categoryDrawerBackdrop" class="drawer-backdrop" onclick="closeCategoryDrawer()"></div>
+    <aside id="categoryDrawer" class="category-drawer">
+        <div class="drawer-header">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(139,92,246,0.2); color: #c4b5fd; display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
+                <div>
+                    <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #fff;">Działy i Kategorie</h3>
+                    <p style="margin: 0; font-size: 11px; color: var(--text-muted);"><span id="drawerTotalProductsCount">0</span> produktów w ofercie</p>
+                </div>
+            </div>
+            <button type="button" class="drawer-close-btn" onclick="closeCategoryDrawer()" title="Zamknij menu">&times;</button>
+        </div>
+
+        <div class="drawer-search-wrapper">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="drawerCategorySearchInput" placeholder="Filtruj kategorie (np. napoje)...">
+        </div>
+
+        <div class="drawer-categories-list" id="drawerCategoriesList">
+            <!-- Wypełniane dynamicznie w app.js -->
+        </div>
+    </aside>
+
+    <!-- PŁYWAJĄCY PRZYCISK DO GÓRY (SCROLL TO TOP) -->
+    <button type="button" id="scrollTopBtn" onclick="scrollToTopSmooth()" class="scroll-top-btn" title="Przewiń na samą górę">
+        <i class="fa-solid fa-arrow-up"></i>
+    </button>
 
     <!-- Skrypty aplikacji -->
     <script src="kravets_catalog_data.js?v=2080"></script>

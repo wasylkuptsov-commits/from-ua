@@ -3111,6 +3111,10 @@ function initApp() {
         const tree = Database.getCategoriesTree();
         const mainCategories = ['Wszystkie', ...Object.keys(tree).sort()];
         
+        // Zaktualizuj licznik kategorii na przycisku szuflady
+        const totalCatsBadge = document.getElementById('drawerTotalCatsBadge');
+        if (totalCatsBadge) totalCatsBadge.innerText = Object.keys(tree).length;
+
         // Render głównego paska
         categoriesBar.innerHTML = '';
         mainCategories.forEach(cat => {
@@ -3147,7 +3151,153 @@ function initApp() {
                 subCategoriesBar.appendChild(subBtn);
             });
         }
+    };
+
+    // --- OBSŁUGA BOCZNEJ SZUFLADY KATEGORII (CATEGORY DRAWER) ---
+    window.openCategoryDrawer = function() {
+        const backdrop = document.getElementById('categoryDrawerBackdrop');
+        const drawer = document.getElementById('categoryDrawer');
+        if (backdrop) backdrop.classList.add('active');
+        if (drawer) drawer.classList.add('active');
+        renderDrawerCategories();
+        const input = document.getElementById('drawerCategorySearchInput');
+        if (input) {
+            input.value = '';
+            setTimeout(() => input.focus(), 150);
+        }
+    };
+
+    window.closeCategoryDrawer = function() {
+        const backdrop = document.getElementById('categoryDrawerBackdrop');
+        const drawer = document.getElementById('categoryDrawer');
+        if (backdrop) backdrop.classList.remove('active');
+        if (drawer) drawer.classList.remove('active');
+    };
+
+    window.renderDrawerCategories = function(filterQuery = '') {
+        const listContainer = document.getElementById('drawerCategoriesList');
+        if (!listContainer) return;
+        
+        const tree = Database.getCategoriesTree();
+        const products = typeof Database !== 'undefined' ? Database.getProducts().filter(p => p.isApproved !== false) : [];
+        const totalProds = products.length;
+
+        // Liczniki dla każdej kategorii
+        const catCounts = {};
+        const catColors = {};
+        const catIcons = {};
+
+        products.forEach(p => {
+            const cat = p.category || 'Inne';
+            catCounts[cat] = (catCounts[cat] || 0) + 1;
+            if (!catColors[cat] && p.categoryColor) catColors[cat] = p.categoryColor;
+            if (!catIcons[cat] && p.categoryIcon) catIcons[cat] = p.categoryIcon;
+        });
+
+        const totalProdsEl = document.getElementById('drawerTotalProductsCount');
+        if (totalProdsEl) totalProdsEl.innerText = totalProds;
+        const totalCatsBadge = document.getElementById('drawerTotalCatsBadge');
+        const allCatKeys = Object.keys(tree).sort();
+        if (totalCatsBadge) totalCatsBadge.innerText = allCatKeys.length;
+
+        const cleanFilter = (filterQuery || '').toLowerCase().trim();
+        const filteredKeys = allCatKeys.filter(k => !cleanFilter || k.toLowerCase().includes(cleanFilter));
+
+        listContainer.innerHTML = '';
+
+        // 1. Przycisk "Wszystkie Kategorie"
+        if (!cleanFilter || 'wszystkie'.includes(cleanFilter)) {
+            const allBtn = document.createElement('button');
+            allBtn.type = 'button';
+            allBtn.className = `drawer-cat-item ${activeCategory === 'Wszystkie' ? 'active' : ''}`;
+            allBtn.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(139,92,246,0.25); color: #c4b5fd; display: flex; align-items: center; justify-content: center; font-size: 13px;">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+                    <span>Wszystkie Kategorie</span>
+                </div>
+                <span class="drawer-cat-badge">${totalProds}</span>
+            `;
+            allBtn.onclick = () => {
+                activeCategory = 'Wszystkie';
+                activeSubCategory = 'Wszystkie';
+                closeCategoryDrawer();
+                renderCategoriesBar();
+                if (typeof window.renderCatalog === 'function') window.renderCatalog();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+            listContainer.appendChild(allBtn);
+        }
+
+        // 2. Lista poszczególnych kategorii
+        filteredKeys.forEach(cat => {
+            const count = catCounts[cat] || 0;
+            const color = catColors[cat] || '#8b5cf6';
+            const icon = catIcons[cat] || 'fa-solid fa-tag';
+            const isAct = activeCategory === cat;
+
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `drawer-cat-item ${isAct ? 'active' : ''}`;
+            btn.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 28px; height: 28px; border-radius: 8px; background: ${color}25; border: 1px solid ${color}55; color: ${color}; display: flex; align-items: center; justify-content: center; font-size: 13px;">
+                        <i class="${icon}"></i>
+                    </div>
+                    <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 210px;">${cat}</span>
+                </div>
+                <span class="drawer-cat-badge">${count}</span>
+            `;
+            btn.onclick = () => {
+                activeCategory = cat;
+                activeSubCategory = 'Wszystkie';
+                closeCategoryDrawer();
+                renderCategoriesBar();
+                if (typeof window.renderCatalog === 'function') window.renderCatalog();
+                const grid = document.getElementById('catalogProductsGrid');
+                if (grid) {
+                    const topPos = grid.getBoundingClientRect().top + window.pageYOffset - 100;
+                    window.scrollTo({ top: Math.max(0, topPos), behavior: 'smooth' });
+                }
+            };
+            listContainer.appendChild(btn);
+        });
+
+        if (filteredKeys.length === 0 && (!cleanFilter || !'wszystkie'.includes(cleanFilter))) {
+            listContainer.innerHTML = `
+                <div style="text-align: center; color: var(--text-dim); padding: 30px 10px; font-size: 13px;">
+                    <i class="fa-solid fa-folder-open" style="font-size: 28px; margin-bottom: 8px; display: block;"></i>
+                    Brak kategorii pasujących do "${filterQuery}"
+                </div>
+            `;
+        }
+    };
+
+    // Podpięcie wyszukiwarki wewnątrz szuflady
+    const drawerSearchInput = document.getElementById('drawerCategorySearchInput');
+    if (drawerSearchInput) {
+        drawerSearchInput.addEventListener('input', (e) => {
+            renderDrawerCategories(e.target.value);
+        });
     }
+
+    // Scroll to Top Smooth & Sticky handler
+    window.scrollToTopSmooth = function() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.addEventListener('scroll', () => {
+        const topBtn = document.getElementById('scrollTopBtn');
+        if (topBtn) {
+            if (window.scrollY > 280) {
+                topBtn.classList.add('visible');
+            } else {
+                topBtn.classList.remove('visible');
+            }
+        }
+    }, { passive: true });
+
     // Inicjalizacja kategorii
     renderCategoriesBar();
 
