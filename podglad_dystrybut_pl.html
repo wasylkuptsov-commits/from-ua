@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wizualizacje Sklepu: dystrybut.pl</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+        body { background: #0b0d18; color: #f8fafc; padding: 25px 20px 60px; min-height: 100vh; }
+        .container { max-width: 1280px; margin: 0 auto; }
+        
+        .header { text-align: center; margin-bottom: 30px; }
+        .badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; margin-bottom: 12px; }
+        h1 { font-size: 32px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+        p.subtitle { color: #94a3b8; font-size: 15px; }
+
+        .tabs { display: flex; justify-content: center; gap: 12px; margin-bottom: 25px; }
+        .tab-btn { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #94a3b8; font-weight: 700; font-size: 14px; padding: 12px 24px; border-radius: 12px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px; }
+        .tab-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+        .tab-btn.active { background: linear-gradient(135deg, #10b981, #059669); color: #fff; border-color: transparent; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4); }
+
+        .image-card { background: #111424; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.6); margin-bottom: 30px; }
+        .image-card-header { padding: 16px 22px; background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; }
+        .image-card-header h3 { font-size: 16px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
+        .image-card-body { padding: 15px; background: #06070d; display: flex; justify-content: center; }
+        .image-card-body img { width: 100%; max-width: 100%; border-radius: 12px; display: block; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+
+        .nav-back { text-align: center; margin-top: 30px; }
+        .btn-link { display: inline-flex; align-items: center; gap: 8px; color: #38bdf8; text-decoration: none; font-weight: 700; font-size: 14px; padding: 10px 20px; border-radius: 10px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); }
+        .btn-link:hover { background: rgba(56, 189, 248, 0.2); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="badge"><i class="fa-solid fa-sparkles"></i> Projekt Identyfikacji Wizualnej</div>
+            <h1>Projekty Strony: dystrybut.pl</h1>
+            <p class="subtitle">Wizualizacje internetowej platformy hurtowej B2B (FMCG & Spożywcza)</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('dark')"><i class="fa-solid fa-moon"></i> Wariant 1: Ciemny (Dark B2B Pro)</button>
+            <button class="tab-btn" onclick="showTab('light')"><i class="fa-solid fa-sun"></i> Wariant 2: Jasny (Clean Minimalist)</button>
+            <button class="tab-btn" onclick="showTab('both')"><i class="fa-solid fa-table-columns"></i> Porównaj Obie Obok Siebie</button>
+        </div>
+
+        <!-- WARIANT 1: CIEMNY -->
+        <div id="view-dark" class="image-card">
+            <div class="image-card-header">
+                <h3><i class="fa-solid fa-moon" style="color: #a78bfa;"></i> Wariant 1: dystrybut.pl (Dark B2B Pro)</h3>
+                <span style="font-size: 12px; color: #94a3b8;">Format: 16:9 HD</span>
+            </div>
+            <div class="image-card-body">
+                <img src="dystrybut_pl_ciemny.jpg" alt="dystrybut.pl - Motyw Ciemny">
+            </div>
+        </div>
+
+        <!-- WARIANT 2: JASNY -->
+        <div id="view-light" class="image-card" style="display: none;">
+            <div class="image-card-header">
+                <h3><i class="fa-solid fa-sun" style="color: #fbbf24;"></i> Wariant 2: dystrybut.pl (Clean Wholesale Minimalist)</h3>
+                <span style="font-size: 12px; color: #94a3b8;">Format: 16:9 HD</span>
+            </div>
+            <div class="image-card-body">
+                <img src="dystrybut_pl_jasny.jpg" alt="dystrybut.pl - Motyw Jasny">
+            </div>
+        </div>
+
+        <div class="nav-back">
+            <a href="index.html" class="btn-link"><i class="fa-solid fa-arrow-left"></i> Wróć do Katalogu Towarów</a>
+        </div>
+    </div>
+
+    <script>
+        function showTab(mode) {
+            const dark = document.getElementById('view-dark');
+            const light = document.getElementById('view-light');
+            const btns = document.querySelectorAll('.tab-btn');
+            btns.forEach(b => b.classList.remove('active'));
+
+            if (mode === 'dark') {
+                dark.style.display = 'block';
+                light.style.display = 'none';
+                btns[0].classList.add('active');
+            } else if (mode === 'light') {
+                dark.style.display = 'none';
+                light.style.display = 'block';
+                btns[1].classList.add('active');
+            } else {
+                dark.style.display = 'block';
+                light.style.display = 'block';
+                btns[2].classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>
