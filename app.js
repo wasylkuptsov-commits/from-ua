@@ -4036,9 +4036,10 @@ function initApp() {
         const orderNum = order ? order.orderNumber : 'ZAM-' + Date.now();
         const msgText = buildOrderMessageText(customer, cartDetails, orderNum);
 
-        // Dublowanie WhatsApp
+        // Dublowanie WhatsApp na bezpośredni numer właściciela hurtowni
+        const ownerPhone = typeof Database !== 'undefined' && Database.getOwnerWhatsAppPhone ? Database.getOwnerWhatsAppPhone() : '48517040800';
         const encodedWhatsApp = encodeURIComponent(msgText);
-        window.open(`https://wa.me/?text=${encodedWhatsApp}`, '_blank');
+        window.open(`https://wa.me/${ownerPhone}?text=${encodedWhatsApp}`, '_blank');
 
         // Wysyłka / generowanie e-mail
         const subject = encodeURIComponent(`Zamówienie B2B ${orderNum} - ${customer.name} (NIP: ${customer.nip || 'nd.'})`);
@@ -4053,7 +4054,7 @@ function initApp() {
 
         updateCartUI();
         closeModal('cartModal');
-        alert(`✅ Dziękujemy! Zamówienie (${orderNum}) zostało zapisane. Otworzono WhatsApp w celu przesłania potwierdzenia!`);
+        alert(`✅ Dziękujemy! Zamówienie (${orderNum}) zostało zapisane. Otworzono WhatsApp do hurtowni w celu przesłania potwierdzenia!`);
     };
 
     // 2. Bezpośrednie zamówienie przez WhatsApp
@@ -4071,12 +4072,13 @@ function initApp() {
         const orderNum = order ? order.orderNumber : 'ZAM-' + Date.now();
         const msgText = buildOrderMessageText(customer, cartDetails, orderNum);
 
+        const ownerPhone = typeof Database !== 'undefined' && Database.getOwnerWhatsAppPhone ? Database.getOwnerWhatsAppPhone() : '48517040800';
         const encodedWhatsApp = encodeURIComponent(msgText);
-        window.open(`https://wa.me/?text=${encodedWhatsApp}`, '_blank');
+        window.open(`https://wa.me/${ownerPhone}?text=${encodedWhatsApp}`, '_blank');
 
         updateCartUI();
         closeModal('cartModal');
-        alert(`✅ Zamówienie (${orderNum}) zapisane i przekierowane do WhatsApp!`);
+        alert(`✅ Zamówienie (${orderNum}) zapisane i przekierowane bezpośrednio do WhatsApp hurtowni!`);
     };
 
     // 3. Pobranie zamówienia jako plik / Druk A4
@@ -4205,13 +4207,14 @@ function initApp() {
                 if (typeof renderCatalog === 'function') renderCatalog();
                 alert(res.message);
             } else {
+                const ownerPhone = typeof Database !== 'undefined' && Database.getOwnerWhatsAppPhone ? Database.getOwnerWhatsAppPhone() : '48517040800';
                 const waText = encodeURIComponent(`Dzień dobry! Zarejestrowałem firmę w katalogu B2B i proszę o aktywację dostępu:\n🏢 Firma: ${name}\n💼 NIP: ${nip}\n📞 Telefon: ${phone}\n📍 Adres: ${address}`);
                 if (msgEl) {
                     msgEl.style.color = '#34d399';
                     msgEl.innerText = '✅ Zgłoszenie zapisane! Otwieram WhatsApp, aby przesłać dane do hurtowni.';
                 }
                 setTimeout(() => {
-                    window.open(`https://wa.me/?text=${waText}`, '_blank');
+                    window.open(`https://wa.me/${ownerPhone}?text=${waText}`, '_blank');
                     closeModal('b2bAuthModal');
                     alert("Dziękujemy za rejestrację! Twoje zgłoszenie zostało przesłane do hurtowni. Po zatwierdzeniu otrzymasz potwierdzenie.");
                 }, 1000);
@@ -6459,6 +6462,31 @@ function initApp() {
         alert(`✅ Nowy kod PIN (${newPin}) został pomyślnie zapisany!`);
     };
 
+    // --- USTAWIENIA WHATSAPP WŁAŚCICIELA ---
+    window.initSettingsUI = function() {
+        const phoneInput = document.getElementById('ownerWhatsAppPhoneInput');
+        if (phoneInput && typeof Database !== 'undefined') {
+            const currentPhone = Database.getOwnerWhatsAppPhone();
+            phoneInput.value = currentPhone.startsWith('48') ? `+48 ${currentPhone.slice(2,5)} ${currentPhone.slice(5,8)} ${currentPhone.slice(8)}` : `+${currentPhone}`;
+        }
+    };
+
+    window.saveOwnerWhatsAppPhone = function() {
+        const input = document.getElementById('ownerWhatsAppPhoneInput');
+        if (!input || typeof Database === 'undefined') return;
+        const val = input.value.trim();
+        const savedPhone = Database.setOwnerWhatsAppPhone(val);
+        input.value = savedPhone.startsWith('48') ? `+48 ${savedPhone.slice(2,5)} ${savedPhone.slice(5,8)} ${savedPhone.slice(8)}` : `+${savedPhone}`;
+        alert(`✅ Zapisano numer WhatsApp hurtowni: +${savedPhone}\nOd teraz wszystkie zamówienia i rejestracje trafiają bezpośrednio na ten numer!`);
+    };
+
+    window.testOwnerWhatsAppConnection = function() {
+        if (typeof Database === 'undefined') return;
+        const phone = Database.getOwnerWhatsAppPhone();
+        const testMsg = encodeURIComponent("🔔 Test połączenia z panelem B2B: Powiadomienia WhatsApp działają w 100% poprawnie na numer +" + phone + "!");
+        window.open(`https://wa.me/${phone}?text=${testMsg}`, '_blank');
+    };
+
     // --- OBSŁUGA BAZY KLIENTÓW B2B W ADMIN.HTML ---
     window.renderB2bClientsAdminView = function() {
         const tbody = document.getElementById('b2bClientsAdminTableBody');
@@ -6596,6 +6624,7 @@ function initApp() {
         if (sectionId === 'view-b2b-clients' && typeof renderB2bClientsAdminView === 'function') renderB2bClientsAdminView();
         if (sectionId === 'view-orders' && typeof renderOrdersView === 'function') renderOrdersView();
         if (sectionId === 'view-suppliers' && typeof populateSuppliersCrm === 'function') populateSuppliersCrm();
+        if (sectionId === 'view-settings' && typeof initSettingsUI === 'function') initSettingsUI();
     };
 
     window.addEventListener('keydown', (e) => {

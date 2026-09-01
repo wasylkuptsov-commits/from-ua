@@ -2643,6 +2643,43 @@ const Database = {
 
         this.saveProducts(formattedProducts);
         return formattedProducts.length;
+    },
+
+    // --- USTAWIENIA SYSTEMU & WHATSAPP WŁAŚCICIELA ---
+    getSettings() {
+        const raw = localStorage.getItem(DB_KEYS.SETTINGS);
+        let settings = {
+            ownerWhatsAppPhone: '48517040800',
+            ownerEmail: 'zamowienia@twojahurtownia.pl',
+            companyName: 'Hurtownia Spożywcza B2B'
+        };
+        if (raw) {
+            try {
+                settings = { ...settings, ...JSON.parse(raw) };
+            } catch(e) {}
+        }
+        return settings;
+    },
+
+    saveSettings(settings) {
+        localStorage.setItem(DB_KEYS.SETTINGS, JSON.stringify(settings));
+    },
+
+    getOwnerWhatsAppPhone() {
+        const settings = this.getSettings();
+        let phone = settings.ownerWhatsAppPhone || '48517040800';
+        phone = String(phone).replace(/[^0-9]/g, '');
+        if (phone.length === 9) phone = '48' + phone;
+        return phone;
+    },
+
+    setOwnerWhatsAppPhone(phone) {
+        const settings = this.getSettings();
+        let clean = String(phone || '').replace(/[^0-9]/g, '');
+        if (clean.length === 9) clean = '48' + clean;
+        settings.ownerWhatsAppPhone = clean;
+        this.saveSettings(settings);
+        return clean;
     }
 };
 
