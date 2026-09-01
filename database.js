@@ -2680,6 +2680,18 @@ const Database = {
         settings.ownerWhatsAppPhone = clean;
         this.saveSettings(settings);
         return clean;
+    },
+
+    getOwnerEmail() {
+        const settings = this.getSettings();
+        return settings.ownerEmail || 'zamowienia@twojahurtownia.pl';
+    },
+
+    setOwnerEmail(email) {
+        const settings = this.getSettings();
+        settings.ownerEmail = (email || '').trim();
+        this.saveSettings(settings);
+        return settings.ownerEmail;
     }
 };
 

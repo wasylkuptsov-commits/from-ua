@@ -4041,9 +4041,11 @@ function initApp() {
         const encodedWhatsApp = encodeURIComponent(msgText);
         window.open(`https://wa.me/${ownerPhone}?text=${encodedWhatsApp}`, '_blank');
 
-        // Wysyłka / generowanie e-mail
+        // Wysyłka / generowanie e-mail do hurtowni (z kopią do klienta w CC)
+        const ownerEmail = typeof Database !== 'undefined' && Database.getOwnerEmail ? Database.getOwnerEmail() : 'zamowienia@twojahurtownia.pl';
         const subject = encodeURIComponent(`Zamówienie B2B ${orderNum} - ${customer.name} (NIP: ${customer.nip || 'nd.'})`);
-        const mailtoLink = `mailto:${customer.email || ''}?subject=${subject}&body=${encodedWhatsApp}`;
+        const ccParam = customer.email ? `&cc=${encodeURIComponent(customer.email)}` : '';
+        const mailtoLink = `mailto:${encodeURIComponent(ownerEmail)}?subject=${subject}&body=${encodedWhatsApp}${ccParam}`;
         
         try {
             const tempA = document.createElement('a');
@@ -6462,12 +6464,17 @@ function initApp() {
         alert(`✅ Nowy kod PIN (${newPin}) został pomyślnie zapisany!`);
     };
 
-    // --- USTAWIENIA WHATSAPP WŁAŚCICIELA ---
+    // --- USTAWIENIA WHATSAPP & E-MAIL WŁAŚCICIELA ---
     window.initSettingsUI = function() {
+        if (typeof Database === 'undefined') return;
         const phoneInput = document.getElementById('ownerWhatsAppPhoneInput');
-        if (phoneInput && typeof Database !== 'undefined') {
+        if (phoneInput) {
             const currentPhone = Database.getOwnerWhatsAppPhone();
             phoneInput.value = currentPhone.startsWith('48') ? `+48 ${currentPhone.slice(2,5)} ${currentPhone.slice(5,8)} ${currentPhone.slice(8)}` : `+${currentPhone}`;
+        }
+        const emailInput = document.getElementById('ownerEmailInput');
+        if (emailInput) {
+            emailInput.value = Database.getOwnerEmail();
         }
     };
 
@@ -6485,6 +6492,27 @@ function initApp() {
         const phone = Database.getOwnerWhatsAppPhone();
         const testMsg = encodeURIComponent("🔔 Test połączenia z panelem B2B: Powiadomienia WhatsApp działają w 100% poprawnie na numer +" + phone + "!");
         window.open(`https://wa.me/${phone}?text=${testMsg}`, '_blank');
+    };
+
+    window.saveOwnerEmail = function() {
+        const input = document.getElementById('ownerEmailInput');
+        if (!input || typeof Database === 'undefined') return;
+        const val = input.value.trim();
+        if (!val || !val.includes('@')) {
+            alert("Podaj prawidłowy adres e-mail (np. zamowienia@twojahurtownia.pl)!");
+            return;
+        }
+        const savedEmail = Database.setOwnerEmail(val);
+        input.value = savedEmail;
+        alert(`✅ Zapisano adres e-mail hurtowni: ${savedEmail}\nOd teraz wszystkie zamówienia e-mail z koszyka są automatycznie adresowane do Ciebie!`);
+    };
+
+    window.testOwnerEmailConnection = function() {
+        if (typeof Database === 'undefined') return;
+        const email = Database.getOwnerEmail();
+        const testSubject = encodeURIComponent("Test zamówienia B2B - Powiadomienie e-mail");
+        const testBody = encodeURIComponent("Dzień dobry,\n\nTo jest testowa wiadomość potwierdzająca poprawne działanie powiadomień e-mail w Twojej hurtowni B2B.\n\nPozdrawiamy,\nSystem Katalogu Online");
+        window.open(`mailto:${encodeURIComponent(email)}?subject=${testSubject}&body=${testBody}`, '_blank');
     };
 
     // --- OBSŁUGA BAZY KLIENTÓW B2B W ADMIN.HTML ---
