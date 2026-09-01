@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Showroom Projektów Wizualnych - dystrybut.pl</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+        body { background: #0a0c16; color: #f8fafc; padding: 30px 20px 80px; min-height: 100vh; }
+        .container { max-width: 1320px; margin: 0 auto; }
+        
+        /* HEADER */
+        .hero { text-align: center; margin-bottom: 35px; }
+        .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(139,92,246,0.18); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.35); padding: 6px 18px; border-radius: 20px; font-size: 13px; font-weight: 700; margin-bottom: 12px; }
+        h1 { font-size: 34px; font-weight: 800; color: #fff; margin-bottom: 8px; letter-spacing: -0.5px; }
+        p.subtitle { color: #94a3b8; font-size: 15px; max-width: 700px; margin: 0 auto; line-height: 1.5; }
+
+        /* FILTER TABS */
+        .nav-filters { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-bottom: 35px; }
+        .filter-btn { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; font-weight: 700; font-size: 14px; padding: 12px 20px; border-radius: 12px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px; }
+        .filter-btn:hover { background: rgba(255,255,255,0.12); color: #fff; transform: translateY(-2px); }
+        .filter-btn.active { background: linear-gradient(135deg, #10b981, #059669); color: #fff; border-color: transparent; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4); }
+
+        /* GRID OF CARDS */
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(600px, 1fr)); gap: 30px; }
+        @media(max-width: 768px) { .gallery-grid { grid-template-columns: 1fr; } }
+
+        .card { background: #111424; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); transition: transform 0.25s ease, border-color 0.25s ease; display: flex; flex-direction: column; }
+        .card:hover { transform: translateY(-4px); border-color: rgba(139, 92, 246, 0.4); }
+
+        .card-header { padding: 16px 20px; background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; }
+        .card-tag { font-size: 11px; font-weight: 800; text-transform: uppercase; padding: 4px 10px; border-radius: 6px; letter-spacing: 0.5px; }
+        .tag-color { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+        .tag-modern { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+        .tag-future { background: rgba(139, 92, 246, 0.2); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.4); }
+        .tag-classic { background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); }
+
+        .card-img-wrap { position: relative; background: #000; overflow: hidden; cursor: pointer; }
+        .card-img-wrap img { width: 100%; height: auto; display: block; transition: transform 0.3s ease; }
+        .card-img-wrap:hover img { transform: scale(1.02); }
+        .card-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.4); opacity: 0; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s; }
+        .card-img-wrap:hover .card-overlay { opacity: 1; }
+        .btn-zoom { background: rgba(255,255,255,0.9); color: #0f172a; font-weight: 700; font-size: 13px; padding: 10px 18px; border-radius: 10px; border: none; display: flex; align-items: center; gap: 6px; }
+
+        .card-body { padding: 20px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .card-title { font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+        .card-desc { font-size: 13px; color: #94a3b8; line-height: 1.5; margin-bottom: 15px; }
+        
+        .conversion-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 12px 14px; border-radius: 10px; margin-bottom: 15px; }
+        .conversion-title { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #10b981; display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+        .conversion-text { font-size: 12px; color: #cbd5e1; }
+
+        .card-actions { display: flex; gap: 10px; }
+        .btn-view-full { flex: 1; background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.35); color: #c4b5fd; font-weight: 700; font-size: 13px; padding: 10px; border-radius: 10px; text-align: center; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s; }
+        .btn-view-full:hover { background: rgba(139,92,246,0.3); color: #fff; }
+
+        /* FULLSCREEN MODAL */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 999999; align-items: center; justify-content: center; padding: 20px; }
+        .modal.active { display: flex; }
+        .modal-img { max-width: 96vw; max-height: 92vh; border-radius: 12px; box-shadow: 0 0 50px rgba(0,0,0,0.8); }
+        .modal-close { position: absolute; top: 20px; right: 25px; background: rgba(255,255,255,0.1); border: none; color: #fff; font-size: 32px; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+        .back-hub { text-align: center; margin-top: 50px; }
+        .btn-home { display: inline-flex; align-items: center; gap: 10px; color: #38bdf8; text-decoration: none; font-weight: 700; font-size: 15px; padding: 14px 28px; border-radius: 14px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); transition: all 0.2s; }
+        .btn-home:hover { background: rgba(56, 189, 248, 0.2); color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="hero">
+            <div class="hero-badge"><i class="fa-solid fa-wand-magic-sparkles"></i> 13 Koncepcji Wizualnych dla dystrybut.pl</div>
+            <h1>Wybierz Najbardziej Sprzedawalny Wygląd Hurtowni</h1>
+            <p class="subtitle">Przeglądaj warianty kolorystyczne, ultra-nowoczesne, futurystyczne oraz klasyczne. Kliknij w dowolny obraz, aby otworzyć go w pełnej rozdzielczości HD.</p>
+        </div>
+
+        <!-- FILTRY -->
+        <div class="nav-filters">
+            <button class="filter-btn active" onclick="filterGallery('all')"><i class="fa-solid fa-border-all"></i> Wszystkie Warianty (13)</button>
+            <button class="filter-btn" onclick="filterGallery('color')"><i class="fa-solid fa-palette"></i> 1. Dużo Kolorów / Vibrant (3)</button>
+            <button class="filter-btn" onclick="filterGallery('modern')"><i class="fa-solid fa-gem"></i> 2. Bardzo Nowoczesne (3)</button>
+            <button class="filter-btn" onclick="filterGallery('future')"><i class="fa-solid fa-microchip"></i> 3. Futurystyczne / Cyber (3)</button>
+            <button class="filter-btn" onclick="filterGallery('classic')"><i class="fa-solid fa-landmark"></i> 4. Klasyczne & Różnorodne (4)</button>
+        </div>
+
+        <!-- GRID PROJEKTÓW -->
+        <div class="gallery-grid">
+
+            <!-- 1. KOLOROWE 1 -->
+            <div class="card" data-cat="color">
+                <div class="card-header">
+                    <span class="card-tag tag-color"><i class="fa-solid fa-palette"></i> Kolorowy Wariant 1</span>
+                    <span style="font-size:12px; color:var(--text-muted);">Vibrant FMCG & Promo Banners</span>
+                </div>
+                <div class="card-img-wrap" onclick="openModal('projekty_graficzne/kolorowy_1_fmcg_1788287395176.jpg')">
+                    <img src="projekty_graficzne/kolorowy_1_fmcg_1788287395176.jpg" alt="Kolorowy FMCG Promo">
+                    <div class="card-overlay"><button class="btn-zoom"><i class="fa-solid fa-magnifying-glass-plus"></i> Powiększ HD</button></div>
+                </div>
+                <div class="card-body">
+                    <div>
+                        <div class="card-title">Mega Promocje & Energetyczne Kafelki</div>
+                        <div class="card-desc">Żywa paleta: pomarańcz, słoneczny żółty, limonka i błękit. Duże kafelki działów z ikonami 3D oraz wyraziste banery rabatowe B2B.</div>
+                        <div class="conversion-box">
+                            <div class="conversion-title"><i class="fa-solid fa-chart-line"></i> Dlaczego sprzedaje:</div>
+                            <div class="conversion-text">Idealne dla sklepów osiedlowych i stacji paliw. Promocje rzucają się w oczy, zachęcając do wrzucania większej liczby zgrzewek do koszyka.</div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <a href="projekty_graficzne/kolorowy_1_fmcg_1788287395176.jpg" target="_blank" class="btn-view-full"><i class="fa-solid fa-up-right-from-square"></i> Otwórz w nowej karcie</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. KOLOROWE 2 -->
+            <div class="card" data-cat="color">
+                <div class="card-header">
+                    <span class="card-tag tag-color"><i class="fa-solid fa-palette"></i> Kolorowy Wariant 2</span>
+                    <span style="font-size:12px; color:var(--text-muted);">Candy Pop & 3D Food Tiles</span>
+                </div>
+                <div class="card-img-wrap" onclick="openModal('projekty_graficzne/kolorowy_2_pop_1788287446166.jpg')">
+                    <img src="projekty_graficzne/kolorowy_2_pop_1788287446166.jpg" alt="Candy Pop Słodycze i Przekąski">
+                    <div class="card-overlay"><button class="btn-zoom"><i class="fa-solid fa-magnifying-glass-plus"></i> Powiększ HD</button></div>
+                </div>
+                <div class="card-body">
+                    <div>
+                        <div class="card-title">Candy Pop - Słodycze & Przekąski</div>
+                        <div class="card-desc">Wyraziste bloki kolorów (magenta, turkus, koral, fiolet) z trójwymiarowymi ikonami żelek, chipsów, napojów i słodyczy.</div>
+                        <div class="conversion-box">
+                            <div class="conversion-title"><i class="fa-solid fa-chart-line"></i> Dlaczego sprzedaje:</div>
+                            <div class="conversion-text">Budzi natychmiastowy apetyt i impulsywny zakup. Doskonałe dla segmentu słodyczy, napojów energetycznych i słonych przekąsek.</div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <a href="projekty_graficzne/kolorowy_2_pop_1788287446166.jpg" target="_blank" class="btn-view-full"><i class="fa-solid fa-up-right-from-square"></i> Otwórz w nowej karcie</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. KOLOROWE 3 -->
+            <div class="card" data-cat="color">
+                <div class="card-header">
+                    <span class="card-tag tag-color"><i class="fa-solid fa-palette"></i> Kolorowy Wariant 3</span>
+                    <span style="font-size:12px; color:var(--text-muted);">Cash & Carry Marketplace</span>
+                </div>
+                <div class="card-img-wrap" onclick="openModal('projekty_graficzne/kolorowy_3_burst_1788287490629.jpg')">
+                    <img src="projekty_graficzne/kolorowy_3_burst_1788287490629.jpg" alt="Cash and Carry Marketplace">
+                    <div class="card-overlay"><button class="btn-zoom"><i class="fa-solid fa-magnifying-glass-plus"></i> Powiększ HD</button></div>
+                </div>
+                <div class="card-body">
+                    <div>
+                        <div class="card-title">Kolorowy Marketplace Hurtowy</div>
+                        <div class="card-desc">Kodowanie kolorystyczne każdego działu (Czerwony - Przekąski, Granat - Napoje, Złoty - Słodycze, Zielony - Spożywcze) z zegarem okazji dnia.</div>
+                        <div class="conversion-box">
+                            <div class="conversion-title"><i class="fa-solid fa-chart-line"></i> Dlaczego sprzedaje:</div>
+                            <div class="conversion-text">Bardzo intuicyjny dla zaopatrzeniowców – każdy dział ma natychmiast rozpoznawalny kolor, a timer odlicza czas do końca promocji.</div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <a href="projekty_graficzne/kolorowy_3_burst_1788287490629.jpg" target="_blank" class="btn-view-full"><i class="fa-solid fa-up-right-from-square"></i> Otwórz w nowej karcie</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. NOWOCZESNE 1 -->
+            <div class="card" data-cat="modern">
+                <div class="card-header">
+                    <span class="card-tag tag-modern"><i class="fa-solid fa-gem"></i> Nowoczesny Wariant 1</span>
+                    <span style="font-size:12px; color:var(--text-muted);">Swiss Neo-Minimalism</span>
+                </div>
+                <div class="card-img-wrap" onclick="openModal('projekty_graficzne/nowoczesny_1_swiss_1788287543164.jpg')">
+                    <img src="projekty_graficzne/nowoczesny_1_swiss_1788287543164.jpg" alt="Swiss Minimalist Modern">
+                    <div class="card-overlay"><button class="btn-zoom"><i class="fa-solid fa-magnifying-glass-plus"></i> Powiększ HD</button></div>
+                </div>
+                <div class="card-body">
+                    <div>
+                        <div class="card-title">Szwajcarski Neo-Minimalizm</div>
+                        <div class="card-desc">Elegancja, perfekcyjna typografia i mnóstwo przestrzeni oddechu. Czyste studyjne packshoty z subtelnym miękkim cieniem i akcentem butelkowej zieleni.</div>
+                        <div class="conversion-box">
+                            <div class="conversion-title"><i class="fa-solid fa-chart-line"></i> Dlaczego sprzedaje:</div>
+                            <div class="conversion-text">Buduje wizerunek potężnego, stabilnego i rzetelnego partnera biznesowego klasy Enterprise. Wyróżnia się z tłumu krzykliwych hurtowni.</div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <a href="projekty_graficzne/nowoczesny_1_swiss_1788287543164.jpg" target="_blank" class="btn-view-full"><i class="fa-solid fa-up-right-from-square"></i> Otwórz w nowej karcie</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. NOWOCZESNE 2 -->
+            <div class="card" data-cat="modern">
+                <div class="card-header">
+                    <span class="card-tag tag-modern"><i class="fa-solid fa-gem"></i> Nowoczesny Wariant 2</span>
+                    <span style="font-size:12px; color:var(--text-muted);">Dark Glassmorphic Pro</span>
+                </div>
+                <div class="card-img-wrap" onclick="openModal('projekty_graficzne/nowoczesny_2_glass_1788287592827.jpg')">
+                    <img src="projekty_graficzne/nowoczesny_2_glass_1788287592827.jpg" alt="Dark Glassmorphic Pro">
+                    <div class="card-overlay"><button class="btn-zoom"><i class="fa-solid fa-magnifying-glass-plus"></i> Powiększ HD</button></div>
+                </div>
+                <div class="card-body">
+                    <div>
+                        <div class="card-title">Dark Glassmorphic Pro (Głęboki Ciemny)</div>
+                        <div class="card-desc">Głębokie tło midnight-blue z półprzezroczystymi kafelkami z efektem oszronionego szkła, świecącymi cenami i neonowymi przyciskami dodawania zgrzewek.</div>
+                        <div class="conversion-box">
+                            <div class="conversion-title"><i class="fa-solid fa-chart-line"></i> Dlaczego sprzedaje:</div>
+                            <div class="conversion-text">Nowoczesny, hipnotyzujący wygląd. Ceny i przyciski akcji świecą na szmaragdowo, kierując wzrok klienta wprost na zakup.</div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <a href="projekty_graficzne/nowoczesny_2_glass_1788287592827.jpg" target="_blank" class="btn-view-full"><i class="fa-solid fa-up-right-from-square"></i> Otwórz w nowej karcie</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. NOWOCZESNE 3 -->
+            <div class="card" data-cat="modern">
+                <div class="card-header">
+                    <span class="card-tag tag-modern"><i class="fa-solid fa-gem"></i> Nowoczesny Wariant 3</span>
+                    <span style="font-size:12px; color:var(--text-muted);">Nordic Clean B2B Sidebar</span>
+                </div>
+                <div class="card-img-wrap" onclick="openModal('projekty_graficzne/nowoczesny_3_nordic_1788287650675.jpg')">
+                    <img src="projekty_graficzne/nowoczesny_3_nordic_1788287650675.jpg" alt="Nordic Clean B2B Sidebar">
+                    <div class="card-overlay"><button class="btn-zoom"><i class="fa-solid fa-magnifying-glass-plus"></i> Powiększ HD</button></div>
+                </div>
+                <div class="card-body">
+                    <div>
+                        <div class="card-title">Skandynawski Panel B2B z Licznikami</div>
+                        <div class="card-desc">Jasny, profesjonalny boczny pasek kategorii z licznikami towarów, progi rabatowe hurtowe (Tier 1-10 / 11-50 kartonów) i szybki licznik sztuk +/-.</div>
+                        <div class="conversion-box">
+                            <div class="conversion-title"><i class="fa-solid fa-chart-line"></i> Dlaczego sprzedaje:</div>
+                            <div class="conversion-text">Najbardziej ergonomiczny dla kupców hurtowych. Klient od razu widzi, że im więcej kartonów zamówi, tym niższą cenę jednostkową otrzyma.</div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <a href="projekty_graficzne/nowoczesny_3_nordic_1788287650675.jpg" target="_blank" class="btn-view-full"><i class="fa-solid fa-up-right-from-square"></i> Otwórz w nowej karcie</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. FUTURYSTYCZNE 1 -->
+            <div class="card" data-cat="future">
+                <div class="card-header">
+                    <span class="card-tag tag-future"><i class="fa-solid fa-microchip"></i> Futurystyczny Wariant 1</span>
+                    <span style="font-size:12px; color:var(--text-muted);">Cyberpunk Hologram Terminal</span>
+                </div>
+                <div class="card-img-wrap" onclick="openModal('projekty_graficzne/futurystyczny_1_cyber_1788287714870.jpg')">
+                    <img src="projekty_graficzne/futurystyczny_1_cyber_1788287714870.jpg" alt="Cyberpunk Hologram Terminal">
+                    <div class="card-overlay"><button class="btn-zoom"><i class="fa-solid fa-magnifying-glass-plus"></i> Powiększ HD</button></div>
+                </div>
+                <div class="card-body">
+                    <div>
+                        <div class="card-title">Cyber-Terminal Holograficzny</div>
+                        <div class="card-desc">Ciemne tło z włókna węglowego, neonowy cyjan i magenta, wskaźnik dostępności stoku w czasie rzeczywistym (AI Stock: 99.7%) i przyciski INITIATE ORDER.</div>
+                        <div class="conversion-box">
+                            <div class="conversion-title"><i class="fa-solid fa-chart-line"></i> Dlaczego sprzedaje:</div>
+                            <div class="conversion-text">Daje poczucie korzystania z najnowocześniejszej giełdy towarowej XXI wieku. Robi ogromne wrażenie technologiczne na młodych przedsiębiorcach.</div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <a href="projekty_graficzne/futurystyczny_1_cyber_1788287714870.jpg" target="_blank" class="btn-view-full"><i class="fa-solid fa-up-right-from-square"></i> Otwórz w nowej karcie</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 8. FUTURYSTYCZNE 2 -->
+            <div class="card" data-cat="future">
+                <div class="card-header">
+                    <span class="card-tag tag-future"><i class="fa-solid fa-microchip"></i> Futurystyczny Wariant 2</span>
+                    <span style="font-size:12px; color:var(--text-muted);">Laser Matrix AI Trading</span>
+                </div>
+                <div class="card-img-wrap" onclick="openModal('projekty_graficzne/futurystyczny_2_matrix_1788287783559.jpg')">
+                    <img src="projekty_graficzne/futurystyczny_2_matrix_1788287783559.jpg" alt="Laser Matrix AI Trading">
+                    <div class="card-overlay"><button class="btn-zoom"><i class="fa-solid fa-magnifying-glass-plus"></i> Powiększ HD</button></div>
+                </div>
+                <div class="card-body">
+                    <div>
+                        <div class="card-title">Laser Matrix AI B2B</div>
+                        <div class="card-desc">Ścięte geometryczne krawędzie kafelków, laserowa neonowa zieleń, wyszukiwarka głosowa AI i pasek na żywo z liczbą dostępnych SKU (843,209 szt.).</div>
+                        <div class="conversion-box">
+                            <div class="conversion-title"><i class="fa-solid fa-chart-line"></i> Dlaczego sprzedaje:</div>
+                            <div class="conversion-text">Maksymalny kontrast neonowej zieleni z czernią gwarantuje 100% skupienia na cenie i natychmiastowym dodaniu do koszyka.</div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <a href="projekty_graficzne/futurystyczny_2_matrix_1788287783559.jpg" target="_blank" class="btn-view-full"><i class="fa-solid fa-up-right-from-square"></i> Otwórz w nowej karcie</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 9. FUTURYSTYCZNE 3 -->
+            <div class="card" data-cat="future">
+                <div class="card-header">
+                    <span class="card-tag tag-future"><i class="fa-solid fa-microchip"></i> Futurystyczny Wariant 3</span>
+                    <span style="font-size:12px; color:var(--text-muted);">Quantum AI Supply Chain</span>
+                </div>
+                <div class="card-img-wrap" onclick="openModal('projekty_graficzne/futurystyczny_3_quantum_1788287864085.jpg')">
+                    <img src="projekty_graficzne/futurystyczny_3_quantum_1788287864085.jpg" alt="Quantum AI Supply Chain">
+                    <div class="card-overlay"><button class="btn-zoom"><i class="fa-solid fa-magnifying-glass-plus"></i> Powiększ HD</button></div>
+                </div>
+                <div class="card-body">
+                    <div>
+                        <div class="card-title">Quantum AI - Kosmiczna Dystrybucja</div>
+                        <div class="card-desc">Głęboki kosmiczny fiolet, lewitujące towary na platformach energetycznych, automatyczny wskaźnik zapasów i funkcja 'ZAMÓW Z AI'.</div>
+                        <div class="conversion-box">
+                            <div class="conversion-title"><i class="fa-solid fa-chart-line"></i> Dlaczego sprzedaje:</div>
+                            <div class="conversion-text">Ekskluzywny, technologiczny charakter budujący pozycję lidera innowacji w branży zaopatrzenia hurtowego.</div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <a href="projekty_graficzne/futurystyczny_3_quantum_1788287864085.jpg" target="_blank" class="btn-view-full"><i class="fa-solid fa-up-right-from-square"></i> Otwórz w nowej karcie</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 10. KLASYCZNE 1 -->
+            <div class="card" data-cat="classic">
+                <div class="card-header">
+                    <span class="card-tag tag-classic"><i class="fa-solid fa-landmark"></i> Klasyczny Wariant 1</span>
+                    <span style="font-size:12px; color:var(--text-muted);">Eko-Kraft / Natural & Artisan</span>
+                </div>
+                <div class="card-img-wrap" onclick="openModal('projekty_graficzne/klasyczny_1_kraft_1788287937607.jpg')">
+                    <img src="projekty_graficzne/klasyczny_1_kraft_1788287937607.jpg" alt="Eko-Kraft Naturalna Dystrybucja">
+                    <div class="card-overlay"><button class="btn-zoom"><i class="fa-solid fa-magnifying-glass-plus"></i> Powiększ HD</button></div>
+                </div>
+                <div class="card-body">
+                    <div>
+                        <div class="card-title">Eko-Kraft - Tradycja & Natura</div>
+                        <div class="card-desc">Ciepłe odcienie papieru pakowego, grawerowane kłosy zbóż, styl tradycyjnego targu hurtowego. Doskonałe dla kasz, nasion, bakalii i przetworów.</div>
+                        <div class="conversion-box">
+                            <div class="conversion-title"><i class="fa-solid fa-chart-line"></i> Dlaczego sprzedaje:</div>
+                            <div class="conversion-text">Budzi głębokie zaufanie i skojarzenie z produktami naturalnymi, prosto od rolnika/producenta bez chemii i pośredników.</div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <a href="projekty_graficzne/klasyczny_1_kraft_1788287937607.jpg" target="_blank" class="btn-view-full"><i class="fa-solid fa-up-right-from-square"></i> Otwórz w nowej karcie</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 11. KLASYCZNE 2 -->
+            <div class="card" data-cat="classic">
+                <div class="card-header">
+                    <span class="card-tag tag-classic"><i class="fa-solid fa-landmark"></i> Klasyczny Wariant 2</span>
+                    <span style="font-size:12px; color:var(--text-muted);">Euro-Logistics Trading Table</span>
+                </div>
+                <div class="card-img-wrap" onclick="openModal('projekty_graficzne/klasyczny_2_euro_1788288028882.jpg')">
+                    <img src="projekty_graficzne/klasyczny_2_euro_1788288028882.jpg" alt="Euro-Logistics Trading Table">
+                    <div class="card-overlay"><button class="btn-zoom"><i class="fa-solid fa-magnifying-glass-plus"></i> Powiększ HD</button></div>
+                </div>
+                <div class="card-body">
+                    <div>
+                        <div class="card-title">Euro-Logistyka (Giełda Towarowa)</div>
+                        <div class="card-desc">Kompaktowa, gęsta tabela z kodami SKU, EAN, ceną jednostkową, ceną kartonu, rabatem paletowym (-8%) i szybkim zamawianiem hurtowym.</div>
+                        <div class="conversion-box">
+                            <div class="conversion-title"><i class="fa-solid fa-chart-line"></i> Dlaczego sprzedaje:</div>
+                            <div class="conversion-text">Najszybsza forma składania zamówień na 50-100 pozycji naraz dla doświadczonych hurtowników i kierowników sieci handlowych.</div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <a href="projekty_graficzne/klasyczny_2_euro_1788288028882.jpg" target="_blank" class="btn-view-full"><i class="fa-solid fa-up-right-from-square"></i> Otwórz w nowej karcie</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 12. KLASYCZNE 3 (PRO) -->
+            <div class="card" data-cat="classic">
+                <div class="card-header">
+                    <span class="card-tag tag-classic"><i class="fa-solid fa-landmark"></i> Klasyczny Wariant 3</span>
+                    <span style="font-size:12px; color:var(--text-muted);">Dark B2B Pro (Oryginalny)</span>
+                </div>
+                <div class="card-img-wrap" onclick="openModal('projekty_graficzne/dystrybut_pl_ciemny.jpg')">
+                    <img src="projekty_graficzne/dystrybut_pl_ciemny.jpg" alt="dystrybut.pl Ciemny Pro">
+                    <div class="card-overlay"><button class="btn-zoom"><i class="fa-solid fa-magnifying-glass-plus"></i> Powiększ HD</button></div>
+                </div>
+                <div class="card-body">
+                    <div>
+                        <div class="card-title">dystrybut.pl - Dark B2B Pro</div>
+                        <div class="card-desc">Nowoczesny ciemny motyw z geometrycznym sześcianem logistycznym, szmaragdowymi akcentami i zoptymalizowaną hierarchią cen zgrzewek.</div>
+                        <div class="conversion-box">
+                            <div class="conversion-title"><i class="fa-solid fa-chart-line"></i> Dlaczego sprzedaje:</div>
+                            <div class="conversion-text">Doskonale zbalansowany między elegancją a prostotą obsługi. Nie męczy oczu i bardzo wyraźnie eksponuje cenę jednostkową netto.</div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <a href="projekty_graficzne/dystrybut_pl_ciemny.jpg" target="_blank" class="btn-view-full"><i class="fa-solid fa-up-right-from-square"></i> Otwórz w nowej karcie</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 13. KLASYCZNE 4 (JASNY) -->
+            <div class="card" data-cat="classic">
+                <div class="card-header">
+                    <span class="card-tag tag-classic"><i class="fa-solid fa-landmark"></i> Klasyczny Wariant 4</span>
+                    <span style="font-size:12px; color:var(--text-muted);">Clean Wholesale Minimalist</span>
+                </div>
+                <div class="card-img-wrap" onclick="openModal('projekty_graficzne/dystrybut_pl_jasny.jpg')">
+                    <img src="projekty_graficzne/dystrybut_pl_jasny.jpg" alt="dystrybut.pl Jasny Minimalist">
+                    <div class="card-overlay"><button class="btn-zoom"><i class="fa-solid fa-magnifying-glass-plus"></i> Powiększ HD</button></div>
+                </div>
+                <div class="card-body">
+                    <div>
+                        <div class="card-title">dystrybut.pl - Clean Wholesale</div>
+                        <div class="card-desc">Klasyczna, jasna hurtownia e-commerce z banerem progów rabatowych (1000 zł = -3%, 2500 zł = -5%) i darmowej dostawy.</div>
+                        <div class="conversion-box">
+                            <div class="conversion-title"><i class="fa-solid fa-chart-line"></i> Dlaczego sprzedaje:</div>
+                            <div class="conversion-text">Standard rynkowy w Polsce (jak Allegro / Makro). Klienci czują się w nim bezpiecznie i natychmiast wiedzą jak złożyć zamówienie.</div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <a href="projekty_graficzne/dystrybut_pl_jasny.jpg" target="_blank" class="btn-view-full"><i class="fa-solid fa-up-right-from-square"></i> Otwórz w nowej karcie</a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="back-hub">
+            <a href="index.html" class="btn-home"><i class="fa-solid fa-arrow-left"></i> Wróć do Głównego Katalogu Produktów</a>
+        </div>
+    </div>
+
+    <!-- MODAL DO POWIĘKSZANIA -->
+    <div id="imageModal" class="modal" onclick="closeModal()">
+        <button class="modal-close">&times;</button>
+        <img id="modalImg" class="modal-img" src="" alt="Podgląd">
+    </div>
+
+    <script>
+        function filterGallery(category) {
+            const cards = document.querySelectorAll('.card');
+            const btns = document.querySelectorAll('.filter-btn');
+            btns.forEach(b => b.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            cards.forEach(card => {
+                if (category === 'all' || card.dataset.cat === category) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function openModal(src) {
+            document.getElementById('modalImg').src = src;
+            document.getElementById('imageModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').classList.remove('active');
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+    </script>
+</body>
+</html>
