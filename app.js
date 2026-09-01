@@ -3269,12 +3269,12 @@ function initApp() {
                         <div class="card-price-row" style="margin-bottom: 12px; align-items: flex-end; justify-content: space-between;">
                             <div>
                                 <div style="font-size: 11px; color: #10b981; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">
-                                    ${packSize > 1 ? `Cena za zgrzewkę (${packSize} szt.):` : 'Cena netto / szt.:'}
+                                    Cena netto / szt.:
                                 </div>
                                 <div class="card-price" style="font-size: 22px; font-weight: 800; color: #fff;">
-                                    ${packClientPrice.toFixed(2)} zł <span style="font-size: 12px; font-weight: 600; color: var(--text-dim);">netto</span>
+                                    ${clientPrice.toFixed(2)} zł <span style="font-size: 12px; font-weight: 600; color: var(--text-dim);">netto</span>
                                 </div>
-                                ${packSize > 1 ? `<div style="font-size: 11px; color: var(--text-dim); margin-top: 1px;">(${clientPrice.toFixed(2)} zł netto / szt.)</div>` : ''}
+                                ${packSize > 1 ? `<div style="font-size: 11px; color: #38bdf8; font-weight: 600; margin-top: 2px;">(${packClientPrice.toFixed(2)} zł za zgrzewkę ${packSize} szt.)</div>` : ''}
                             </div>
                             <button class="btn-card-add" title="Dodaj 1 zgrzewkę (${packSize} szt.) do koszyka" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; border-radius: 10px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; transition: transform 0.15s ease; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);">
                                 <i class="fa-solid fa-cart-plus"></i>
@@ -3499,19 +3499,23 @@ function initApp() {
             if (priceSection) priceSection.style.display = 'grid';
             if (clientActions) clientActions.style.display = 'flex';
 
-            const pkgPriceEl = document.getElementById('modalProductPackagePrice');
-            if (pkgPriceEl) {
-                pkgPriceEl.innerText = `${packClientPrice.toFixed(2)} zł netto`;
-            }
-
             const priceEl = document.getElementById('modalProductPrice');
             if (priceEl) {
                 priceEl.innerText = `${numPrice.toFixed(2)} zł netto / ${product.unit || 'szt.'}`;
             }
 
+            const pkgPriceEl = document.getElementById('modalProductPackagePrice');
+            if (pkgPriceEl) {
+                if (packSize > 1) {
+                    pkgPriceEl.innerText = `(${packClientPrice.toFixed(2)} zł za zgrzewkę ${packSize} szt.)`;
+                } else {
+                    pkgPriceEl.innerText = `(Pakowane pojedynczo)`;
+                }
+            }
+
             const grossEl = document.getElementById('modalProductPriceGross');
             if (grossEl) {
-                grossEl.innerText = `(brutto: ${(packClientPrice * (1 + vatNum / 100)).toFixed(2)} zł / zgrzewka)`;
+                grossEl.innerText = `(brutto: ${grossPrice} zł / szt.)`;
             }
         }
 
