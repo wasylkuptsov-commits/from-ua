@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nordic Clean B2B Sidebar - dystrybut.pl</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+        body { background: #0c0e1a; color: #f8fafc; padding: 30px 20px 80px; min-height: 100vh; }
+        .container { max-width: 1300px; margin: 0 auto; }
+        
+        /* HEADER */
+        .hero { text-align: center; margin-bottom: 35px; }
+        .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); padding: 6px 18px; border-radius: 20px; font-size: 13px; font-weight: 700; margin-bottom: 12px; }
+        h1 { font-size: 34px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+        p.subtitle { color: #94a3b8; font-size: 15px; max-width: 750px; margin: 0 auto; line-height: 1.5; }
+
+        /* TABS */
+        .tabs { display: flex; justify-content: center; gap: 12px; margin-bottom: 30px; flex-wrap: wrap; }
+        .tab-btn { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #94a3b8; font-weight: 700; font-size: 14px; padding: 12px 24px; border-radius: 12px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px; }
+        .tab-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+        .tab-btn.active { background: linear-gradient(135deg, #10b981, #059669); color: #fff; border-color: transparent; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4); }
+
+        /* VIEW CARDS */
+        .preview-card { background: #111424; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.6); margin-bottom: 30px; }
+        .preview-header { padding: 18px 24px; background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .preview-header h3 { font-size: 18px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 10px; }
+        .preview-body { padding: 15px; background: #06070d; display: flex; justify-content: center; position: relative; cursor: pointer; }
+        .preview-body img { width: 100%; max-width: 100%; border-radius: 12px; display: block; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: transform 0.2s; }
+        .preview-body:hover img { transform: scale(1.008); }
+
+        /* HIGHLIGHTS BOX */
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; margin: 30px 0; }
+        .feat-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 20px; }
+        .feat-box h4 { font-size: 15px; font-weight: 800; color: #34d399; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .feat-box p { font-size: 13px; color: #94a3b8; line-height: 1.5; }
+
+        /* MODAL */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 999999; align-items: center; justify-content: center; padding: 20px; }
+        .modal.active { display: flex; }
+        .modal-img { max-width: 96vw; max-height: 92vh; border-radius: 12px; box-shadow: 0 0 50px rgba(0,0,0,0.8); }
+        .modal-close { position: absolute; top: 20px; right: 25px; background: rgba(255,255,255,0.1); border: none; color: #fff; font-size: 32px; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+        .nav-back { text-align: center; margin-top: 40px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
+        .btn-link { display: inline-flex; align-items: center; gap: 8px; color: #38bdf8; text-decoration: none; font-weight: 700; font-size: 14px; padding: 12px 24px; border-radius: 12px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); }
+        .btn-link:hover { background: rgba(56, 189, 248, 0.2); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="hero">
+            <div class="hero-badge"><i class="fa-solid fa-leaf"></i> Nordic Clean B2B Sidebar</div>
+            <h1>Wizualizacje Stylu: dystrybut.pl</h1>
+            <p class="subtitle">Skandynawski, czysty układ B2B z bocznym panelem liczników kategorii, szybkimi licznikami ilości kartonów i szmaragdowym przyciskiem zakupu.</p>
+        </div>
+
+        <!-- TABS -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('light')"><i class="fa-solid fa-sun" style="color: #fbbf24;"></i> Wariant 1: Jasny (Light Mode)</button>
+            <button class="tab-btn" onclick="showTab('dark')"><i class="fa-solid fa-moon" style="color: #34d399;"></i> Wariant 2: Ciemny (Dark Mode)</button>
+            <button class="tab-btn" onclick="showTab('both')"><i class="fa-solid fa-table-columns"></i> Porównaj Obie Obok Siebie</button>
+        </div>
+
+        <!-- WARIANT JASNY -->
+        <div id="view-light" class="preview-card">
+            <div class="preview-header">
+                <h3><i class="fa-solid fa-sun" style="color: #fbbf24;"></i> Nordic Clean B2B Sidebar — Wersja Jasna (Light Mode)</h3>
+                <span style="font-size: 13px; color: #34d399; font-weight: 700;"><i class="fa-solid fa-magnifying-glass-plus"></i> Kliknij w obraz, aby powiększyć HD</span>
+            </div>
+            <div class="preview-body" onclick="openModal('nordic_clean_jasny.jpg')">
+                <img src="nordic_clean_jasny.jpg" alt="Nordic Clean B2B Sidebar Jasny">
+            </div>
+        </div>
+
+        <!-- WARIANT CIEMNY -->
+        <div id="view-dark" class="preview-card" style="display: none;">
+            <div class="preview-header">
+                <h3><i class="fa-solid fa-moon" style="color: #34d399;"></i> Nordic Clean B2B Sidebar — Wersja Ciemna (Dark Mode)</h3>
+                <span style="font-size: 13px; color: #34d399; font-weight: 700;"><i class="fa-solid fa-magnifying-glass-plus"></i> Kliknij w obraz, aby powiększyć HD</span>
+            </div>
+            <div class="preview-body" onclick="openModal('nordic_clean_ciemny.jpg')">
+                <img src="nordic_clean_ciemny.jpg" alt="Nordic Clean B2B Sidebar Ciemny">
+            </div>
+        </div>
+
+        <!-- CECHY ERGONOMICZNE TEGO STYLU -->
+        <div class="features-grid">
+            <div class="feat-box">
+                <h4><i class="fa-solid fa-list-check"></i> Boczny Panel z Licznikami</h4>
+                <p>Kategorie są zawsze widoczne na komputerze z liczbą dostępnych produktów (np. <i>Napoje 48</i>, <i>Słodycze 82</i>). Na telefonie zwija się w wygodną szufladę boczną.</p>
+            </div>
+            <div class="feat-box">
+                <h4><i class="fa-solid fa-plus-minus"></i> Szybki Licznik Kartonów (- / +)</h4>
+                <p>Kupiec hurtowy może błyskawicznie zmienić liczbę zgrzewek z 1 na 5 czy 10 bez wchodzenia w szczegóły produktu, klikając od razu zielony przycisk.</p>
+            </div>
+            <div class="feat-box">
+                <h4><i class="fa-solid fa-tag"></i> Podwójna Wycena & Zgrzewka</h4>
+                <p>Wyeksponowana cena netto za 1 sztukę oraz czytelna informacja o wielkości całego opakowania zbiorczego (np. <i>Karton 24 szt.</i>).</p>
+            </div>
+        </div>
+
+        <!-- LINKI POWROTNE -->
+        <div class="nav-back">
+            <a href="galeria_projektow.html" class="btn-link"><i class="fa-solid fa-images"></i> Otwórz Cały Showroom 13 Projektów</a>
+            <a href="index.html" class="btn-link" style="background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.35); color: #34d399;"><i class="fa-solid fa-arrow-left"></i> Wróć do Katalogu Towarów</a>
+        </div>
+    </div>
+
+    <!-- MODAL DO POWIĘKSZANIA -->
+    <div id="imageModal" class="modal" onclick="closeModal()">
+        <button class="modal-close">&times;</button>
+        <img id="modalImg" class="modal-img" src="" alt="Podgląd">
+    </div>
+
+    <script>
+        function showTab(mode) {
+            const light = document.getElementById('view-light');
+            const dark = document.getElementById('view-dark');
+            const btns = document.querySelectorAll('.tab-btn');
+            btns.forEach(b => b.classList.remove('active'));
+
+            if (mode === 'light') {
+                light.style.display = 'block';
+                dark.style.display = 'none';
+                btns[0].classList.add('active');
+            } else if (mode === 'dark') {
+                light.style.display = 'none';
+                dark.style.display = 'block';
+                btns[1].classList.add('active');
+            } else {
+                light.style.display = 'block';
+                dark.style.display = 'block';
+                btns[2].classList.add('active');
+            }
+        }
+
+        function openModal(src) {
+            document.getElementById('modalImg').src = src;
+            document.getElementById('imageModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').classList.remove('active');
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+    </script>
+</body>
+</html>
