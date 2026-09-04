@@ -36,17 +36,52 @@
     </div>
 
     <div class="container">
-        
-        <!-- Nagłówek Katalogu Klienta -->
-        <header class="header-bar">
-            <div class="brand-block">
-                <div class="brand-badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35);">
-                    <i class="fa-solid fa-cube"></i> dystrybut.pl
+         <!-- Nagłówek Katalogu Klienta -->
+        <header class="header-bar" style="margin-bottom: 22px; padding: 12px 0;">
+            <div class="brand-header-link" onclick="selectCategory('Wszystkie')" title="dystrybut.pl - Strona Główna Hurtowni">
+                <div class="brand-logo-icon">
+                    <svg width="44" height="44" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="dystryTop" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#34d399"/>
+                                <stop offset="100%" stop-color="#10b981"/>
+                            </linearGradient>
+                            <linearGradient id="dystryLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#059669"/>
+                                <stop offset="100%" stop-color="#047857"/>
+                            </linearGradient>
+                            <linearGradient id="dystryRight" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#06b6d4"/>
+                                <stop offset="100%" stop-color="#0891b2"/>
+                            </linearGradient>
+                            <filter id="dystryGlow" x="-20%" y="-20%" width="140%" height="140%">
+                                <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#10b981" flood-opacity="0.4"/>
+                            </filter>
+                        </defs>
+                        <g filter="url(#dystryGlow)">
+                            <!-- Górna ściana izometryczna sześcianu -->
+                            <polygon points="24,5 42,15 24,25 6,15" fill="url(#dystryTop)" />
+                            <!-- Lewa ściana -->
+                            <polygon points="6,15 24,25 24,43 6,33" fill="url(#dystryLeft)" />
+                            <!-- Prawa ściana -->
+                            <polygon points="24,25 42,15 42,33 24,43" fill="url(#dystryRight)" />
+                            <!-- Wewnętrzny rdzeń dystrybucji FMCG -->
+                            <circle cx="24" cy="24" r="5" fill="#ffffff" />
+                            <path d="M24 20 L27.5 24 L24 28 L20.5 24 Z" fill="#0f172a" />
+                        </g>
+                    </svg>
                 </div>
-                <h1 id="appTitle" style="font-size: 26px; font-weight: 800; display: flex; align-items: center; gap: 4px; margin: 0 0 2px 0;">
-                    <span style="color: #10b981;">dystrybut</span><span style="color: var(--text-main);">.pl</span>
-                </h1>
-                <p id="appSubtitle" style="font-size: 12px; color: var(--text-muted); margin: 0;">Hurtownia FMCG & Dystrybucja B2B</p>
+                <div class="brand-text-group">
+                    <div class="brand-title-row">
+                        <span class="brand-title-main">dystrybut</span>
+                        <span class="brand-title-tld">.pl</span>
+                        <span class="brand-b2b-badge"><i class="fa-solid fa-cube"></i> B2B FMCG</span>
+                    </div>
+                    <div class="brand-tagline">
+                        <span class="brand-live-pulse" title="System hurtowni online"><span class="pulse-ring"></span><span class="pulse-core"></span></span>
+                        <span>Hurtownia FMCG & Dystrybucja B2B</span>
+                    </div>
+                </div>
             </div>
             
             <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
@@ -98,30 +133,23 @@
                             <input type="text" id="catalogSearchInput" class="search-input" placeholder="Wyszukaj po nazwie towaru, EAN lub SKU...">
                         </div>
                         <button type="button" id="openCategoryDrawerBtn" class="mobile-only-btn" onclick="openCategoryDrawer()" style="background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(5,150,105,0.25)); border: 1px solid rgba(16,185,129,0.45); color: #34d399; font-weight: 700; font-size: 13px; padding: 0 16px; border-radius: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; white-space: nowrap; transition: all 0.2s;" title="Otwórz pełną listę kategorii">
-                            <i class="fa-solid fa-bars-staggered"></i> <span class="hide-on-mobile">Kategorie</span>
-                            <span id="drawerTotalCatsBadge" style="background: rgba(16,185,129,0.3); color: #fff; padding: 2px 7px; border-radius: 10px; font-size: 11px; font-weight: 800;">38</span>
+                            <i class="fa-solid fa-list-ul"></i> <span>Kategorie</span>
                         </button>
                     </div>
 
-                    <!-- MOBILNY POZIOMY PASEK KATEGORII (TYLKO NA TELEFONACH) -->
-                    <div class="categories-bar mobile-only-bar" id="categoriesBar">
-                        <!-- Generowane dynamicznie w app.js -->
-                    </div>
-                    
-                    <div class="subcategories-bar" id="subCategoriesBar" style="display: none;">
-                        <!-- Generowane dynamicznie w app.js na podstawie wybranej kategorii -->
+                    <!-- Pasek aktywnej kategorii -->
+                    <div class="catalog-active-header" id="catalogActiveHeader">
+                        <h2 id="currentCategoryTitle">Wszystkie Towary</h2>
+                        <span class="active-count-chip" id="currentCategoryCountChip">0 produktów</span>
                     </div>
 
-                    <div class="catalog-active-header" id="catalogActiveHeader" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
-                        <h2 id="currentCategoryTitle" style="font-size: 18px; font-weight: 800; margin: 0; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
-                            <i class="fa-solid fa-boxes-packing" style="color: #10b981;"></i> Wszystkie Towary
-                        </h2>
-                        <span id="activeProductsCount" style="font-size: 13px; color: var(--text-muted); font-weight: 600;">(0 produktów)</span>
+                    <!-- Siatka kafelków towarów -->
+                    <div class="products-grid" id="catalogProductsGrid">
+                        <!-- Dynamicznie generowane kafelki Nordic Clean -->
                     </div>
-
-                    <div class="products-grid" id="catalogProductsGrid"></div>
                 </div>
             </div>
+
         </section>
 
     </div>
@@ -132,7 +160,7 @@
     <div class="modal" id="productDetailsModal">
         <div class="modal-content modal-lg" style="background: #111422; border: 1px solid rgba(255,255,255,0.12); border-radius: 20px; max-width: 750px; width: 95%;">
             <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 15px;">
-                <div class="brand-badge" id="modalProductCategoryBadge" style="font-size: 11px; margin: 0;">
+                <div class="brand-badge" id="modalProductCategoryBadge" style="font-size: 11px; margin: 0; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35);">
                     <i class="fa-solid fa-tag"></i> Produkt
                 </div>
                 <button class="modal-close" onclick="closeModal('productDetailsModal')" style="background: none; border: none; color: var(--text-muted); font-size: 26px; cursor: pointer;">&times;</button>
@@ -140,10 +168,21 @@
             <div class="modal-body" style="padding-top: 15px;">
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; align-items: center;">
                     
-                    <!-- LEWA KOLUMNA: PACKSHOT HD -->
+                    <!-- LEWA KOLUMNA: PACKSHOT HD LUB PLACEHOLDER DYSTRYBUT.PL -->
                     <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
-                        <div style="width: 100%; aspect-ratio: 1/1; max-width: 320px; background: #ffffff; border-radius: 16px; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.1);">
-                            <img id="modalProductImg" src="" alt="Zdjęcie produktu" style="width: 100%; height: 100%; object-fit: contain; padding: 12px;">
+                        <div style="width: 100%; aspect-ratio: 1/1; max-width: 320px; background: #0f172a; border-radius: 16px; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.1); position: relative;">
+                            <img id="modalProductImg" src="" alt="Zdjęcie produktu" style="width: 100%; height: 100%; object-fit: contain; padding: 12px; background: #ffffff;" onerror="this.style.display='none'; document.getElementById('modalProductBrandedPlaceholder').style.display='flex';">
+                            <div id="modalProductBrandedPlaceholder" class="dystrybut-modal-placeholder" style="display: none;">
+                                <div id="modalPlaceholderIconCircle" class="modal-placeholder-icon-circle">
+                                    <i class="fa-solid fa-cube" style="color: #34d399;"></i>
+                                </div>
+                                <div id="modalPlaceholderBrandBadge" class="modal-placeholder-brand-badge">
+                                    <i class="fa-solid fa-cube"></i> dystrybut.pl
+                                </div>
+                                <div style="font-size: 11px; color: var(--text-dim); display: flex; align-items: center; gap: 5px;" id="modalProductImgQualityBadge">
+                                    <i class="fa-solid fa-shield-halved" style="color: #10b981;"></i> Gwarancja dystrybut.pl
+                                </div>
+                            </div>
                         </div>
                     </div>
 

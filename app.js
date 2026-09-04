@@ -679,7 +679,7 @@ window.renderPimView = function renderPimView(searchQuery = '', supplierQuery = 
         const catColor = p.categoryColor || '#8b5cf6';
         const catTextColor = p.categoryTextColor || '#c4b5fd';
         const catIcon = p.categoryIcon || 'fa-solid fa-tag';
-        const catName = p.category || 'Katalog Kravets';
+        const catName = p.category || 'Katalog Produktów';
 
         const card = document.createElement('div');
         card.className = 'glass-card';
@@ -736,7 +736,7 @@ window.renderPimView = function renderPimView(searchQuery = '', supplierQuery = 
             : '';
 
         const hasValidImg = p.image && !p.image.includes('placeholder') && !p.image.includes('unsplash') && p.image.length > 5;
-        const brandShort = (p.brand || p.category || 'Kravets').split(' - ')[0].trim();
+        const brandShort = (Database.sanitizeBrand ? Database.sanitizeBrand(p.brand, p.category) : 'dystrybut.pl');
         const imgThumb = hasValidImg
             ? `<img src="${p.image}" onclick="openProductDetailsModalById('${p.id}')" style="width:54px; height:54px; object-fit:contain; background:#ffffff; border-radius:8px; border:1.5px solid ${catColor}; flex-shrink:0; cursor:pointer; padding:2px; transition:transform 0.15s ease, box-shadow 0.15s ease;" onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 12px ${catColor}66';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';" title="🔍 Kliknij aby powiększyć zdjęcie i otworzyć wizytówkę towaru" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                <div onclick="openProductDetailsModalById('${p.id}')" style="display:none; width:54px; height:54px; background:linear-gradient(135deg, ${catColor}25, rgba(15, 23, 42, 0.95)); border-radius:8px; border:1.5px solid ${catColor}66; flex-direction:column; align-items:center; justify-content:center; gap:2px; flex-shrink:0; cursor:pointer; padding:2px;" title="🔍 ${p.name}"><i class="${catIcon}" style="font-size:18px; color:${catTextColor};"></i><span style="font-size:8px; font-weight:800; color:${catTextColor}; text-transform:uppercase;">${brandShort}</span></div>`
@@ -3482,8 +3482,24 @@ function initApp() {
             const catTextColor = p.categoryTextColor || '#34d399';
             const catIcon = p.categoryIcon || 'fa-solid fa-tag';
             const catName = p.category || 'Katalog';
-            const brandShort = (p.brand || p.category || 'PRODUKT').split(' - ')[0].trim();
             const hasValidImg = p.image && !p.image.includes('placeholder') && !p.image.includes('unsplash') && p.image.length > 5;
+
+            const placeholderHtml = `
+                <div class="dystrybut-card-placeholder" style="background: linear-gradient(145deg, ${catColor}18 0%, #0d1222 70%, #080b14 100%); border-bottom: 2px solid ${catColor}55;">
+                    <div class="placeholder-watermark"><i class="fa-solid fa-cube"></i></div>
+                    <div class="placeholder-icon-circle" style="border-color: ${catColor}88; color: ${catTextColor};">
+                        <i class="${catIcon}"></i>
+                    </div>
+                    <div class="placeholder-brand-pill">
+                        <i class="fa-solid fa-cube" style="color: #10b981; font-size: 10px;"></i>
+                        <span class="brand-text">dystrybut<span class="brand-dot">.pl</span></span>
+                    </div>
+                    <div class="placeholder-tagline">
+                        <i class="fa-solid fa-shield-halved" style="color: #10b981;"></i>
+                        <span>Dystrybucja B2B</span>
+                    </div>
+                </div>
+            `;
 
             const isB2b = typeof Database !== 'undefined' && Database.isB2bLoggedIn();
             const packSize = parseInt(p.packSize) > 0 ? parseInt(p.packSize) : 1;
@@ -3495,21 +3511,11 @@ function initApp() {
                 <div class="card-img-wrapper" style="position:relative; width:100%; height:185px; overflow:hidden; border-radius:14px 14px 0 0; background:#0f172a; display:flex; align-items:center; justify-content:center;">
                     ${hasValidImg ? `
                         <img src="${p.image}" class="card-img" alt="${p.name}" style="width:100%; height:100%; object-fit:contain; background:#ffffff; padding:8px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                        <div style="display:none; width:100%; height:100%; background:linear-gradient(135deg, ${catColor}25, #0f172a 90%); flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:15px; border-bottom:2px solid ${catColor}66;">
-                            <div style="width:52px; height:52px; border-radius:50%; background:rgba(0,0,0,0.4); border:1.5px solid ${catColor}88; display:flex; align-items:center; justify-content:center; font-size:22px; color:${catTextColor}; box-shadow:0 4px 15px rgba(0,0,0,0.3);">
-                                <i class="${catIcon}"></i>
-                            </div>
-                            <span style="font-size:12px; font-weight:800; color:${catTextColor}; text-transform:uppercase; letter-spacing:1px; background:${catColor}25; padding:3px 10px; border-radius:12px; border:1px solid ${catColor}55;">${brandShort}</span>
-                            <span style="font-size:10px; color:var(--text-dim);">Produkt Oryginalny</span>
+                        <div style="display:none; width:100%; height:100%;">
+                            ${placeholderHtml}
                         </div>
                     ` : `
-                        <div style="width:100%; height:100%; background:linear-gradient(135deg, ${catColor}25, #0f172a 90%); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:15px; border-bottom:2px solid ${catColor}66;">
-                            <div style="width:52px; height:52px; border-radius:50%; background:rgba(0,0,0,0.4); border:1.5px solid ${catColor}88; display:flex; align-items:center; justify-content:center; font-size:22px; color:${catTextColor}; box-shadow:0 4px 15px rgba(0,0,0,0.3);">
-                                <i class="${catIcon}"></i>
-                            </div>
-                            <span style="font-size:12px; font-weight:800; color:${catTextColor}; text-transform:uppercase; letter-spacing:1px; background:${catColor}25; padding:3px 10px; border-radius:12px; border:1px solid ${catColor}55;">${brandShort}</span>
-                            <span style="font-size:10px; color:var(--text-dim);">Produkt Oryginalny</span>
-                        </div>
+                        ${placeholderHtml}
                     `}
                     <span class="card-category-badge" style="position:absolute; top:8px; left:8px; background: ${catColor}ee; color: #fff; font-weight: 700; border: 1px solid rgba(255,255,255,0.25); font-size:10px; padding:3px 8px; border-radius:6px; backdrop-filter:blur(4px); z-index:2;"><i class="${catIcon}"></i> ${catName}</span>
                     ${p.sku ? `<span style="position:absolute; bottom:8px; left:8px; background:rgba(0,0,0,0.65); color:#cbd5e1; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; font-family:monospace; z-index:2;">SKU: ${p.sku}</span>` : ''}
@@ -3615,11 +3621,11 @@ function initApp() {
         if (!product) return;
         selectedProductIdForModal = product.id;
 
-        const catColor = product.categoryColor || '#8b5cf6';
-        const catTextColor = product.categoryTextColor || '#c4b5fd';
+        const catColor = product.categoryColor || '#10b981';
+        const catTextColor = product.categoryTextColor || '#34d399';
         const catIcon = product.categoryIcon || 'fa-solid fa-tag';
-        const catName = product.category || 'Katalog Kravets';
-        const brandShort = (product.brand || product.category || 'Kravets').split(' - ')[0].trim();
+        const catName = product.category || 'Katalog Produktów';
+        const brandShort = (Database.sanitizeBrand ? Database.sanitizeBrand(product.brand, product.category) : (product.brand || 'dystrybut.pl'));
 
         // 1. Kategoria i status
         const stripe = document.getElementById('modalProductCategoryStripe');
@@ -3667,24 +3673,23 @@ function initApp() {
             if (imgEl) imgEl.style.display = 'none';
             if (placeholderEl) {
                 placeholderEl.style.display = 'flex';
-                placeholderEl.style.background = `linear-gradient(135deg, ${catColor}20, #13172b 85%)`;
                 if (iconCircle) {
-                    iconCircle.style.background = `${catColor}30`;
-                    iconCircle.style.border = `2px solid ${catColor}`;
+                    iconCircle.style.background = `${catColor}25`;
+                    iconCircle.style.border = `2px solid ${catColor}88`;
                     iconCircle.style.color = catTextColor;
                     iconCircle.innerHTML = `<i class="${catIcon}"></i>`;
                 }
                 if (brandBadgeEl) {
-                    brandBadgeEl.style.background = `${catColor}25`;
-                    brandBadgeEl.style.color = catTextColor;
-                    brandBadgeEl.style.border = `1px solid ${catColor}66`;
-                    brandBadgeEl.innerText = brandShort;
+                    brandBadgeEl.style.background = `rgba(16, 185, 129, 0.15)`;
+                    brandBadgeEl.style.color = `#34d399`;
+                    brandBadgeEl.style.border = `1px solid rgba(16, 185, 129, 0.4)`;
+                    brandBadgeEl.innerHTML = `<i class="fa-solid fa-cube" style="color:#10b981;"></i> dystrybut.pl`;
                 }
             }
             if (dlLink) dlLink.style.display = 'none';
             if (qualityBadge) {
-                qualityBadge.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Oryginał Kravets';
-                qualityBadge.style.color = '#38bdf8';
+                qualityBadge.innerHTML = '<i class="fa-solid fa-shield-halved" style="color: #10b981;"></i> Gwarancja dystrybut.pl';
+                qualityBadge.style.color = '#10b981';
             }
         }
 
@@ -3704,7 +3709,7 @@ function initApp() {
         if (eanEl) eanEl.innerText = product.ean || 'Brak kodu EAN';
 
         const skuEl = document.getElementById('modalProductSku');
-        if (skuEl) skuEl.innerText = product.sku || (product.id ? product.id.replace('kravets_', '') : '-');
+        if (skuEl) skuEl.innerText = product.sku || (product.id ? product.id.replace('kravets_', 'D-') : '-');
 
         const vatEl = document.getElementById('modalProductVat');
         const vatRate = product.vat ? (typeof product.vat === 'string' && product.vat.includes('%') ? product.vat : `${product.vat}%`) : '5%';

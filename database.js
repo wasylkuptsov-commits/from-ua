@@ -79,6 +79,21 @@ const Database = {
         // Automatyczne wyczyszczenie nieczytelnych nazw i scalenie bazy danych przy każdym starcie!
         this.autoCleanAndMergeAllProducts();
 
+        // Sanitizacja marek: zamiana dostawcy 'Kravets' na brand hurtowni 'dystrybut.pl'
+        try {
+            const currentProds = this.getProducts();
+            let hasKravetsBrand = false;
+            currentProds.forEach(p => {
+                if (p.brand && (p.brand.toLowerCase().includes('kravets') || p.brand.toLowerCase().includes('krawiec'))) {
+                    p.brand = 'dystrybut.pl';
+                    hasKravetsBrand = true;
+                }
+            });
+            if (hasKravetsBrand) {
+                this.saveProducts(currentProds);
+            }
+        } catch(e) {}
+
         // Wymuszenie załadowania bazy ze zdjęciami Chipsy Złociste (v24 pure)
         const DB_VERSION_KEY = 'porownywarka_zlociste_chipsy_v24_pure';
         if (localStorage.getItem('porownywarka_db_version') !== DB_VERSION_KEY) {
@@ -90,6 +105,18 @@ const Database = {
         // Automatyczne podpięcie zdjęć Kravets oraz Kraft Group, jeśli w bazie brakuje zdjęć
         this.enrichAllImagesFromKravetsCatalog();
         this.enrichAllImagesFromKraftCatalog();
+    },
+
+    // Pomocnicza metoda sanityzacji marki dla widoków klienta
+    sanitizeBrand(brand, category) {
+        if (!brand || brand.toLowerCase().includes('kravets') || brand.toLowerCase().includes('krawiec') || brand.toLowerCase() === 'produkt') {
+            if (category && !category.toLowerCase().includes('kravets')) {
+                const shortCat = category.split(' - ')[0].trim();
+                if (shortCat && shortCat.length > 2 && shortCat !== 'Wszystkie' && shortCat !== 'Inne') return shortCat;
+            }
+            return 'dystrybut.pl';
+        }
+        return brand;
     },
 
     // --- ZARZĄDZANIE MARŻĄ WŁAŚCICIELA ---
@@ -2624,7 +2651,7 @@ const Database = {
             categoryTextColor: k.categoryTextColor || '#c4b5fd',
             categoryIcon: k.categoryIcon || 'fa-solid fa-tag',
             originalGroup: k.originalGroup || k.category,
-            brand: k.brand || 'Kravets',
+            brand: (k.brand && !k.brand.toLowerCase().includes('kravets') && !k.brand.toLowerCase().includes('krawiec')) ? k.brand : 'dystrybut.pl',
             packSize: k.packSize || 1,
             packagePrice: k.packSize > 1 ? parseFloat((k.priceNetto * k.packSize).toFixed(2)) : null,
             vat: k.vat ? (typeof k.vat === 'string' && k.vat.includes('%') ? k.vat : `${k.vat}%`) : '5%',
