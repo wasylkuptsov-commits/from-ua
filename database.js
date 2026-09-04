@@ -2198,10 +2198,10 @@ const Database = {
                 matchesQuery = terms.every(term => targetText.includes(term));
             }
             
-            const matchesCategory = !cleanCategory || cleanCategory === 'Wszystkie' || 
+            const matchesCategory = !cleanCategory || cleanCategory === 'Wszystkie' || cleanCategory.toLowerCase() === 'all' || 
                 (p.category && p.category.toLowerCase() === cleanCategory.toLowerCase());
                 
-            const matchesSubCategory = !cleanSubCategory || cleanSubCategory === 'Wszystkie' ||
+            const matchesSubCategory = !cleanSubCategory || cleanSubCategory === 'Wszystkie' || cleanSubCategory.toLowerCase() === 'all' ||
                 (p.subCategory && p.subCategory.toLowerCase() === cleanSubCategory.toLowerCase());
 
             const isProductAvailable = p.offers && p.offers.some(o => o.isAvailable !== false);

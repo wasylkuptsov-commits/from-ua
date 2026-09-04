@@ -51,9 +51,9 @@ body {
 /* Układ główny */
 .container {
     width: 100%;
-    max-width: 650px;
+    max-width: 1440px;
     margin: 0 auto;
-    padding: 15px 12px;
+    padding: 15px 20px;
 }
 
 /* Nagłówek */
@@ -236,16 +236,33 @@ p {
     box-shadow: 0 0 12px var(--primary-glow);
 }
 
-/* Siatka Produktów Katalogu */
+/* Siatka Produktów Katalogu (Nordic Grid) */
 .products-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
 }
 
-@media (max-width: 480px) {
+.category-group-header {
+    grid-column: 1 / -1;
+    margin-top: 18px;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.category-group-header h3 {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+@media (max-width: 576px) {
     .products-grid {
-        grid-template-columns: repeat(2, 1fr); /* 2 kolumny na telefonach */
+        grid-template-columns: repeat(2, 1fr);
         gap: 10px;
     }
 }
@@ -1295,6 +1312,302 @@ body.theme-light .drawer-cat-item.active .drawer-cat-badge {
     transform: translateY(-3px) scale(1.05);
 }
 
+/* --- NORDIC CLEAN B2B SIDEBAR LAYOUT --- */
+.nordic-layout {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+    margin-top: 15px;
+}
 
+/* LEWY BOCZNY PANEL KATEGORII (DESKTOP) */
+.nordic-sidebar {
+    background: var(--card-bg, #111422);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    border-radius: 18px;
+    padding: 16px;
+    position: sticky;
+    top: 20px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
 
+.nordic-sidebar::-webkit-scrollbar {
+    width: 5px;
+}
+.nordic-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.nordic-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.15);
+    border-radius: 10px;
+}
 
+.nordic-sidebar-header {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text-main, #fff);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.nordic-sidebar-quick-filters {
+    margin-bottom: 10px;
+}
+
+.nordic-sidebar-btn {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    color: var(--text-muted, #94a3b8);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    margin-bottom: 6px;
+}
+
+.nordic-sidebar-btn:hover {
+    background: rgba(255,255,255,0.08);
+    color: var(--text-main, #fff);
+    transform: translateX(3px);
+}
+
+.nordic-sidebar-btn.active {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.18), rgba(5, 150, 105, 0.25));
+    border-color: rgba(16, 185, 129, 0.45);
+    color: #34d399;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.15);
+}
+
+.nordic-sidebar-btn .btn-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nordic-count-badge {
+    background: rgba(255,255,255,0.08);
+    color: var(--text-muted, #94a3b8);
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 10px;
+    transition: all 0.2s;
+}
+
+.nordic-sidebar-btn.active .nordic-count-badge {
+    background: #10b981;
+    color: #fff;
+}
+
+.nordic-sidebar-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* RESPONSYWNOŚĆ MOBILNA DLA SIDEBARU */
+@media (min-width: 993px) {
+    .mobile-only-btn {
+        display: none !important;
+    }
+    .mobile-only-bar {
+        display: none !important;
+    }
+}
+
+@media (max-width: 992px) {
+    .nordic-layout {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    .nordic-sidebar {
+        display: none;
+    }
+    .mobile-only-btn {
+        display: flex !important;
+    }
+    .mobile-only-bar {
+        display: flex !important;
+    }
+}
+
+/* --- KAFELKI PRODUKTÓW & SZYBKI SELEKTOR ILOŚCI ZGRZEWEK --- */
+.card-qty-row {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+    margin-top: 10px;
+}
+
+.qty-stepper {
+    display: flex;
+    align-items: center;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border-color, rgba(255,255,255,0.15));
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.qty-stepper-btn {
+    background: none;
+    border: none;
+    color: var(--text-main, #fff);
+    font-weight: 800;
+    font-size: 14px;
+    width: 30px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.qty-stepper-btn:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.qty-stepper-input {
+    width: 32px;
+    text-align: center;
+    background: transparent;
+    border: none;
+    color: var(--text-main, #fff);
+    font-size: 13px;
+    font-weight: 800;
+    pointer-events: none;
+}
+
+.btn-card-add-nordic {
+    flex: 1;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 800;
+    padding: 9px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.btn-card-add-nordic:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.45);
+}
+
+/* --- MOTYW NORDIC LIGHT (JASNY) --- */
+body.theme-light {
+    background: #f4f6fb !important;
+    color: #1e293b !important;
+}
+
+body.theme-light .container {
+    color: #1e293b !important;
+}
+
+body.theme-light .header-bar {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;
+}
+
+body.theme-light .brand-badge {
+    background: rgba(16, 185, 129, 0.12) !important;
+    color: #065f46 !important;
+    border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+body.theme-light .nordic-sidebar {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05) !important;
+}
+
+body.theme-light .nordic-sidebar-header {
+    color: #0f172a !important;
+    border-color: #f1f5f9 !important;
+}
+
+body.theme-light .nordic-sidebar-btn {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    color: #475569 !important;
+}
+
+body.theme-light .nordic-sidebar-btn:hover {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+}
+
+body.theme-light .nordic-sidebar-btn.active {
+    background: rgba(16, 185, 129, 0.12) !important;
+    border-color: rgba(16, 185, 129, 0.4) !important;
+    color: #065f46 !important;
+}
+
+body.theme-light .nordic-sidebar-btn.active .nordic-count-badge {
+    background: #10b981 !important;
+    color: #ffffff !important;
+}
+
+body.theme-light .catalog-card {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;
+}
+
+body.theme-light .catalog-card:hover {
+    border-color: #cbd5e1 !important;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.08) !important;
+}
+
+body.theme-light .catalog-card .card-title {
+    color: #0f172a !important;
+}
+
+body.theme-light .search-wrapper input {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+body.theme-light .qty-stepper {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+}
+
+body.theme-light .qty-stepper-btn {
+    color: #0f172a !important;
+}
+
+body.theme-light .qty-stepper-input {
+    color: #0f172a !important;
+}
+
+body.theme-light #currentCategoryTitle {
+    color: #0f172a !important;
+}

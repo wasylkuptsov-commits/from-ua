@@ -3097,16 +3097,87 @@ function initApp() {
         }
     }, true);
 
-    // --- KATALOG DLA KLIENTA ---
+    // --- KATALOG DLA KLIENTA (NORDIC CLEAN B2B) ---
     const catalogSearchInput = document.getElementById('catalogSearchInput');
     if (catalogSearchInput) {
         catalogSearchInput.addEventListener('input', () => { if (typeof window.renderCatalog === 'function') window.renderCatalog(); });
     }
 
+    // Centralna funkcja wyboru kategorii (dla Sidebar, Szuflady i Paska Mobilnego)
+    window.selectCategory = function(cat) {
+        if (cat === 'all') cat = 'Wszystkie';
+        activeCategory = cat;
+        activeSubCategory = 'Wszystkie';
+        renderNordicSidebar();
+        renderCategoriesBar();
+        renderDrawerCategories();
+        if (typeof window.renderCatalog === 'function') window.renderCatalog();
+        
+        // Aktualizacja nagłówka aktywnej kategorii
+        const titleEl = document.getElementById('currentCategoryTitle');
+        if (titleEl) {
+            if (cat === 'all' || cat === 'Wszystkie') {
+                titleEl.innerHTML = `<i class="fa-solid fa-boxes-packing" style="color: #10b981;"></i> Wszystkie Towary`;
+            } else {
+                titleEl.innerHTML = `<i class="fa-solid fa-tag" style="color: #10b981;"></i> ${cat}`;
+            }
+        }
+    };
+
+    // Render stałego bocznego panelu kategorii (Desktop Nordic Sidebar)
+    window.renderNordicSidebar = function() {
+        const listContainer = document.getElementById('nordicSidebarList');
+        if (!listContainer || typeof Database === 'undefined') return;
+
+        const tree = Database.getCategoriesTree();
+        const products = Database.getProducts().filter(p => p.isApproved !== false);
+        const totalProds = products.length;
+
+        // Zliczanie produktów per kategoria
+        const catCounts = {};
+        const catIcons = {};
+        products.forEach(p => {
+            const c = p.category || 'Inne';
+            catCounts[c] = (catCounts[c] || 0) + 1;
+            if (!catIcons[c] && p.categoryIcon) catIcons[c] = p.categoryIcon;
+        });
+
+        // Licznik dla "Wszystkie Towary"
+        const countAllEl = document.getElementById('nordicCountAll');
+        if (countAllEl) countAllEl.innerText = totalProds;
+        const allBtn = document.getElementById('nordicFilterAllBtn');
+        if (allBtn) {
+            if (activeCategory === 'all' || activeCategory === 'Wszystkie') {
+                allBtn.classList.add('active');
+            } else {
+                allBtn.classList.remove('active');
+            }
+        }
+
+        listContainer.innerHTML = '';
+        const allCatKeys = Object.keys(tree).sort();
+
+        allCatKeys.forEach(cat => {
+            const count = catCounts[cat] || 0;
+            const icon = catIcons[cat] || 'fa-solid fa-tag';
+            const isAct = activeCategory === cat;
+
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `nordic-sidebar-btn ${isAct ? 'active' : ''}`;
+            btn.innerHTML = `
+                <span class="btn-label"><i class="${icon}"></i> ${cat}</span>
+                <span class="nordic-count-badge">${count}</span>
+            `;
+            btn.onclick = () => selectCategory(cat);
+            listContainer.appendChild(btn);
+        });
+    };
+
     window.renderCategoriesBar = function renderCategoriesBar() {
         const categoriesBar = document.getElementById('categoriesBar');
         const subCategoriesBar = document.getElementById('subCategoriesBar');
-        if (!categoriesBar) return;
+        if (!categoriesBar || typeof Database === 'undefined') return;
         
         const tree = Database.getCategoriesTree();
         const mainCategories = ['Wszystkie', ...Object.keys(tree).sort()];
@@ -3115,24 +3186,20 @@ function initApp() {
         const totalCatsBadge = document.getElementById('drawerTotalCatsBadge');
         if (totalCatsBadge) totalCatsBadge.innerText = Object.keys(tree).length;
 
-        // Render głównego paska
+        // Render poziomego paska (mobilny)
         categoriesBar.innerHTML = '';
         mainCategories.forEach(cat => {
+            const isAct = (cat === 'Wszystkie' && (activeCategory === 'all' || activeCategory === 'Wszystkie')) || activeCategory === cat;
             const btn = document.createElement('button');
-            btn.className = `category-pill ${activeCategory === cat ? 'active' : ''}`;
+            btn.className = `category-pill ${isAct ? 'active' : ''}`;
             btn.innerHTML = `<i class="fa-solid ${cat === 'Wszystkie' ? 'fa-layer-group' : 'fa-tag'}"></i> ${cat}`;
-            btn.onclick = () => {
-                activeCategory = cat;
-                activeSubCategory = 'Wszystkie'; // Reset subcategory on main change
-                renderCategoriesBar(); // Re-render bars
-                if (typeof window.renderCatalog === 'function') window.renderCatalog();
-            };
+            btn.onclick = () => selectCategory(cat);
             categoriesBar.appendChild(btn);
         });
 
         // Render paska podkategorii
         if (!subCategoriesBar) return;
-        if (activeCategory === 'Wszystkie' || !tree[activeCategory]) {
+        if (activeCategory === 'Wszystkie' || activeCategory === 'all' || !tree[activeCategory]) {
             subCategoriesBar.style.display = 'none';
         } else {
             subCategoriesBar.style.display = 'flex';
@@ -3311,6 +3378,35 @@ function initApp() {
 
     let catalogRenderLimit = 100;
 
+    // Szybki selektor ilości zgrzewek na kafelku
+    window.changeCardQty = function(productId, delta) {
+        const input = document.getElementById('card-qty-' + productId);
+        if (!input) return;
+        let val = parseInt(input.value) || 1;
+        val = Math.max(1, Math.min(999, val + delta));
+        input.value = val;
+    };
+
+    // Dodanie wybranej liczby opakowań zbiorczych do koszyka
+    window.addNordicCardToCart = function(productId) {
+        if (typeof Database === 'undefined') return;
+        if (!Database.isB2bLoggedIn()) {
+            window.openB2bAuthModal();
+            return;
+        }
+        const product = Database.getProductById(productId);
+        if (!product) return;
+        const input = document.getElementById('card-qty-' + productId);
+        const qty = input ? Math.max(1, parseInt(input.value) || 1) : 1;
+        const packSize = parseInt(product.packSize) > 0 ? parseInt(product.packSize) : 1;
+
+        Database.addToCart(productId, qty);
+        updateCartUI();
+        if (typeof showToast === 'function') {
+            showToast(`Dodano do koszyka: ${qty} op. (${qty * packSize} szt.)`);
+        }
+    };
+
     window.renderCatalog = function renderCatalog(resetLimit = true) {
         if (resetLimit) catalogRenderLimit = 100;
         const catalogSearchInput = document.getElementById('catalogSearchInput');
@@ -3319,6 +3415,12 @@ function initApp() {
         const grid = document.getElementById('catalogProductsGrid');
         if (!grid) return;
         grid.innerHTML = '';
+
+        // Aktualizacja licznika w nagłówku
+        const activeCountEl = document.getElementById('activeProductsCount');
+        if (activeCountEl) {
+            activeCountEl.innerText = `(${products.length} produktów)`;
+        }
 
         if (products.length === 0) {
             grid.innerHTML = `
@@ -3355,7 +3457,7 @@ function initApp() {
 
         visibleProducts.forEach(p => {
             let groupName = p.category || 'Inne';
-            if (activeCategory !== 'Wszystkie') {
+            if (activeCategory !== 'Wszystkie' && activeCategory !== 'all') {
                 groupName = p.subCategory && p.subCategory !== 'Ogólne' ? p.subCategory : 'Pozostałe';
             } else {
                 groupName = `${p.category || 'Inne'}${p.subCategory && p.subCategory !== 'Ogólne' ? ' / ' + p.subCategory : ''}`;
@@ -3376,11 +3478,11 @@ function initApp() {
             const clientPrice = Database.calculateClientPrice(baseWholesaleForClient, p);
             const offersCount = p.offers ? p.offers.length : 0;
 
-            const catColor = p.categoryColor || '#8b5cf6';
-            const catTextColor = p.categoryTextColor || '#c4b5fd';
+            const catColor = p.categoryColor || '#10b981';
+            const catTextColor = p.categoryTextColor || '#34d399';
             const catIcon = p.categoryIcon || 'fa-solid fa-tag';
-            const catName = p.category || 'Katalog Kravets';
-            const brandShort = (p.brand || p.category || 'KRAVETS').split(' - ')[0].trim();
+            const catName = p.category || 'Katalog';
+            const brandShort = (p.brand || p.category || 'PRODUKT').split(' - ')[0].trim();
             const hasValidImg = p.image && !p.image.includes('placeholder') && !p.image.includes('unsplash') && p.image.length > 5;
 
             const isB2b = typeof Database !== 'undefined' && Database.isB2bLoggedIn();
@@ -3390,9 +3492,9 @@ function initApp() {
             const card = document.createElement('div');
             card.className = 'catalog-card';
             card.innerHTML = `
-                <div class="card-img-wrapper" style="position:relative; width:100%; height:180px; overflow:hidden; border-radius:12px 12px 0 0; background:#0f172a; display:flex; align-items:center; justify-content:center;">
+                <div class="card-img-wrapper" style="position:relative; width:100%; height:185px; overflow:hidden; border-radius:14px 14px 0 0; background:#0f172a; display:flex; align-items:center; justify-content:center;">
                     ${hasValidImg ? `
-                        <img src="${p.image}" class="card-img" alt="${p.name}" style="width:100%; height:100%; object-fit:contain; background:#ffffff; padding:6px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <img src="${p.image}" class="card-img" alt="${p.name}" style="width:100%; height:100%; object-fit:contain; background:#ffffff; padding:8px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                         <div style="display:none; width:100%; height:100%; background:linear-gradient(135deg, ${catColor}25, #0f172a 90%); flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:15px; border-bottom:2px solid ${catColor}66;">
                             <div style="width:52px; height:52px; border-radius:50%; background:rgba(0,0,0,0.4); border:1.5px solid ${catColor}88; display:flex; align-items:center; justify-content:center; font-size:22px; color:${catTextColor}; box-shadow:0 4px 15px rgba(0,0,0,0.3);">
                                 <i class="${catIcon}"></i>
@@ -3409,71 +3511,56 @@ function initApp() {
                             <span style="font-size:10px; color:var(--text-dim);">Produkt Oryginalny</span>
                         </div>
                     `}
-                    <span class="card-category-badge" style="position:absolute; top:8px; left:8px; background: ${catColor}dd; color: #fff; font-weight: 700; border: 1px solid rgba(255,255,255,0.25); font-size:10px; padding:3px 8px; border-radius:6px; backdrop-filter:blur(4px); z-index:2;"><i class="${catIcon}"></i> ${catName}</span>
-                    ${offersCount > 1 ? `<span style="position:absolute; bottom:8px; right:8px; background:linear-gradient(135deg,#8b5cf6,#ec4899); color:#fff; font-size:10px; font-weight:700; padding:3px 8px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.4); z-index:2;"><i class="fa-solid fa-scale-balanced"></i> ${offersCount} warianty</span>` : ''}
+                    <span class="card-category-badge" style="position:absolute; top:8px; left:8px; background: ${catColor}ee; color: #fff; font-weight: 700; border: 1px solid rgba(255,255,255,0.25); font-size:10px; padding:3px 8px; border-radius:6px; backdrop-filter:blur(4px); z-index:2;"><i class="${catIcon}"></i> ${catName}</span>
+                    ${p.sku ? `<span style="position:absolute; bottom:8px; left:8px; background:rgba(0,0,0,0.65); color:#cbd5e1; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; font-family:monospace; z-index:2;">SKU: ${p.sku}</span>` : ''}
+                    ${offersCount > 1 ? `<span style="position:absolute; bottom:8px; right:8px; background:linear-gradient(135deg,#8b5cf6,#ec4899); color:#fff; font-size:10px; font-weight:700; padding:3px 8px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.4); z-index:2;"><i class="fa-solid fa-scale-balanced"></i> ${offersCount} oferty</span>` : ''}
                 </div>
-                <div class="card-body">
-                    <div class="card-title" style="min-height: 40px; margin-bottom: 8px;">${p.name}</div>
+                <div class="card-body" style="padding: 14px;">
+                    <div class="card-title" style="min-height: 42px; font-weight: 800; font-size: 14px; margin-bottom: 8px; line-height: 1.3;">${p.name}</div>
                     
                     ${isB2b ? `
-                        <div class="card-price-row" style="margin-bottom: 12px; align-items: flex-end; justify-content: space-between;">
-                            <div>
-                                <div style="font-size: 11px; color: #10b981; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">
-                                    Cena netto / szt.:
-                                </div>
-                                <div class="card-price" style="font-size: 22px; font-weight: 800; color: #fff;">
-                                    ${clientPrice.toFixed(2)} zł <span style="font-size: 12px; font-weight: 600; color: var(--text-dim);">netto</span>
-                                </div>
-                                ${packSize > 1 ? `<div style="font-size: 11px; color: #38bdf8; font-weight: 600; margin-top: 2px;">(${packClientPrice.toFixed(2)} zł za zgrzewkę ${packSize} szt.)</div>` : ''}
+                        <div class="card-price-section" style="margin-bottom: 10px;">
+                            <div style="font-size: 11px; color: #10b981; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">
+                                Cena netto / szt.:
                             </div>
-                            <button class="btn-card-add" title="Dodaj 1 zgrzewkę (${packSize} szt.) do koszyka" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; border-radius: 10px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; transition: transform 0.15s ease; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);">
-                                <i class="fa-solid fa-cart-plus"></i>
+                            <div class="card-price" style="font-size: 20px; font-weight: 800; color: var(--text-main);">
+                                ${clientPrice.toFixed(2)} zł <span style="font-size: 11px; font-weight: 600; color: var(--text-dim);">netto</span>
+                            </div>
+                            ${packSize > 1 ? `<div style="font-size: 11px; color: #0284c7; font-weight: 700; margin-top: 2px;">(${packClientPrice.toFixed(2)} zł za karton ${packSize} szt.)</div>` : ''}
+                        </div>
+
+                        <div class="card-qty-row">
+                            <div class="qty-stepper">
+                                <button type="button" class="qty-stepper-btn" onclick="event.stopPropagation(); changeCardQty('${p.id}', -1);" title="Zmniejsz ilość">&minus;</button>
+                                <input type="text" class="qty-stepper-input" id="card-qty-${p.id}" value="1" readonly>
+                                <button type="button" class="qty-stepper-btn" onclick="event.stopPropagation(); changeCardQty('${p.id}', 1);" title="Zwiększ ilość">&plus;</button>
+                            </div>
+                            <button type="button" class="btn-card-add-nordic" onclick="event.stopPropagation(); addNordicCardToCart('${p.id}');" title="Dodaj wybraną liczbę kartonów do koszyka">
+                                <i class="fa-solid fa-cart-plus"></i> <span>+ DODAJ</span>
                             </button>
                         </div>
                     ` : `
-                        <div style="margin-bottom: 14px;">
-                            <button type="button" class="btn-open-b2b-gate" style="width: 100%; background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.4); color: #c4b5fd; padding: 10px 12px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s ease;">
-                                <i class="fa-solid fa-lock" style="color: #a78bfa;"></i> Zaloguj NIP (Ceny B2B)
+                        <div style="margin-bottom: 10px;">
+                            <button type="button" class="btn-open-b2b-gate" onclick="event.stopPropagation(); window.openB2bAuthModal();" style="width: 100%; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #065f46; padding: 11px 12px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s ease;">
+                                <i class="fa-solid fa-lock" style="color: #10b981;"></i> Zaloguj NIP (Ceny B2B)
                             </button>
                         </div>
                     `}
 
-                    <div style="font-size: 12px; color: var(--text-muted); background: rgba(0,0,0,0.2); padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:5px; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 5px;">
-                            <span>Pakowanie (zgrzewka):</span>
-                            <strong style="color:var(--text-main);">${packSize} ${p.unit || 'szt.'}</strong>
+                    <div style="font-size: 11px; color: var(--text-muted); background: rgba(0,0,0,0.06); padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border-color); margin-top: 10px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                            <span>Opakowanie:</span>
+                            <strong style="color:var(--text-main); font-weight:700;">${packSize} ${p.unit || 'szt.'}</strong>
                         </div>
                         <div style="display:flex; justify-content:space-between;">
                             <span>Stawka VAT:</span>
                             <strong style="color:var(--text-main);">${p.vat || 'nd.'}</strong>
                         </div>
-                        ${p.expirationDate ? `
-                        <div style="display:flex; justify-content:space-between; margin-top:5px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 5px; color:#ef4444; font-weight:700;">
-                            <span><i class="fa-solid fa-calendar-day"></i> Data ważności:</span>
-                            <span>${p.expirationDate}</span>
-                        </div>
-                        ` : ''}
                     </div>
                 </div>
             `;
 
-            card.addEventListener('click', (e) => {
-                if (e.target.closest('.btn-open-b2b-gate')) {
-                    e.stopPropagation();
-                    window.openB2bAuthModal();
-                    return;
-                }
-                if (e.target.closest('.btn-card-add')) {
-                    e.stopPropagation();
-                    if (!Database.isB2bLoggedIn()) {
-                        window.openB2bAuthModal();
-                        return;
-                    }
-                    Database.addToCart(p.id, 1);
-                    updateCartUI();
-                    showToast(`Dodano do koszyka: 1 op. (${packSize} szt.)`);
-                    return;
-                }
+            card.addEventListener('click', () => {
                 openProductDetailsModal(p, clientPrice);
             });
 
@@ -3492,12 +3579,12 @@ function initApp() {
             loadMoreBtn.style.padding = '12px 30px';
             loadMoreBtn.style.fontSize = '14px';
             loadMoreBtn.style.fontWeight = '700';
-            loadMoreBtn.style.background = 'linear-gradient(135deg, var(--primary), var(--secondary))';
+            loadMoreBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
             loadMoreBtn.style.border = 'none';
             loadMoreBtn.style.color = '#fff';
             loadMoreBtn.style.borderRadius = '12px';
             loadMoreBtn.style.cursor = 'pointer';
-            loadMoreBtn.style.boxShadow = '0 4px 15px rgba(139,92,246,0.3)';
+            loadMoreBtn.style.boxShadow = '0 4px 15px rgba(16,185,129,0.3)';
 
             const remaining = products.length - catalogRenderLimit;
             loadMoreBtn.innerHTML = `<i class="fa-solid fa-boxes-stacked"></i> Pokaż kolejne 100 towarów (Wyświetlono ${catalogRenderLimit} z ${products.length} - pozostało jeszcze ${remaining})`;
@@ -6728,6 +6815,7 @@ function initApp() {
         // Czysty katalog klienta (index.html)
         if (typeof applySavedTheme === 'function') applySavedTheme();
         if (typeof updateB2bHeaderUI === 'function') updateB2bHeaderUI();
+        if (typeof renderNordicSidebar === 'function') renderNordicSidebar();
         if (typeof renderCategoriesBar === 'function') renderCategoriesBar();
         if (typeof renderCatalog === 'function') renderCatalog();
         if (typeof updateCartUI === 'function') updateCartUI();

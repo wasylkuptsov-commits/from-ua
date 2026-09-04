@@ -40,11 +40,13 @@
         <!-- Nagłówek Katalogu Klienta -->
         <header class="header-bar">
             <div class="brand-block">
-                <div class="brand-badge">
-                    <i class="fa-solid fa-store"></i> Katalog Zamówień Online
+                <div class="brand-badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35);">
+                    <i class="fa-solid fa-cube"></i> dystrybut.pl
                 </div>
-                <h1 id="appTitle">Katalog Produktów</h1>
-                <p id="appSubtitle">Wygodne zamówienia hurtowe i detaliczne</p>
+                <h1 id="appTitle" style="font-size: 26px; font-weight: 800; display: flex; align-items: center; gap: 4px; margin: 0 0 2px 0;">
+                    <span style="color: #10b981;">dystrybut</span><span style="color: var(--text-main);">.pl</span>
+                </h1>
+                <p id="appSubtitle" style="font-size: 12px; color: var(--text-muted); margin: 0;">Hurtownia FMCG & Dystrybucja B2B</p>
             </div>
             
             <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
@@ -53,8 +55,8 @@
                 </div>
 
                 <!-- Przełącznik motywu Jasny / Ciemny -->
-                <button type="button" id="themeToggleBtn" onclick="toggleCatalogTheme()" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 15px; transition: all 0.2s;" title="Przełącz motyw">
-                    <i class="fa-solid fa-sun"></i>
+                <button type="button" id="themeToggleBtn" onclick="toggleCatalogTheme()" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: var(--text-main); width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 15px; transition: all 0.2s;" title="Przełącz motyw Dzień / Noc">
+                    <i class="fa-solid fa-sun" id="themeToggleIcon"></i>
                 </button>
 
                 <button class="btn btn-cart-header" id="headerCartBtn" onclick="openCartModalFromHeader()" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-weight: 700; font-size: 13px; padding: 10px 18px; border-radius: 25px; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);">
@@ -65,35 +67,61 @@
             </div>
         </header>
 
-        <!-- ================= WIDOK KLIENTA: KATALOG PRODUKTÓW ================= -->
+        <!-- ================= WIDOK KLIENTA: KATALOG PRODUKTÓW (NORDIC CLEAN) ================= -->
         <section id="view-client-catalog" class="view-section active">
-            <div class="catalog-hero">
-                <div class="hero-content">
-                    <h2><i class="fa-solid fa-boxes-packing"></i> Przeglądaj i Zamawiaj Towary</h2>
-                    <p>Aktualne ceny, wysokiej jakości produkty i szybka realizacja. Dodaj wybrane pozycje do koszyka i prześlij zamówienie w kilka sekund.</p>
-                </div>
-            </div>
-
-            <div class="search-category-row" style="display: flex; gap: 10px; align-items: stretch; margin-bottom: 12px;">
-                <div class="search-wrapper" style="flex: 1; margin-bottom: 0;">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="catalogSearchInput" class="search-input" placeholder="Szukaj po nazwie towaru, EAN lub smaku...">
-                </div>
-                <button type="button" id="openCategoryDrawerBtn" onclick="openCategoryDrawer()" style="background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(99,102,241,0.25)); border: 1px solid rgba(139,92,246,0.45); color: #c4b5fd; font-weight: 700; font-size: 13px; padding: 0 16px; border-radius: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; white-space: nowrap; transition: all 0.2s;" title="Otwórz pełną listę kategorii">
-                    <i class="fa-solid fa-bars-staggered"></i> <span class="hide-on-mobile">Kategorie</span>
-                    <span id="drawerTotalCatsBadge" style="background: rgba(139,92,246,0.4); color: #fff; padding: 2px 7px; border-radius: 10px; font-size: 11px; font-weight: 800;">38</span>
-                </button>
-            </div>
-
-            <div class="categories-bar" id="categoriesBar">
-                <!-- Generowane dynamicznie w app.js -->
-            </div>
             
-            <div class="subcategories-bar" id="subCategoriesBar" style="display: none;">
-                <!-- Generowane dynamicznie w app.js na podstawie wybranej kategorii -->
-            </div>
+            <div class="nordic-layout">
+                <!-- LEWY BOCZNY PANEL KATEGORII (DESKTOP SIDEBAR) -->
+                <aside class="nordic-sidebar" id="nordicSidebar">
+                    <div class="nordic-sidebar-header">
+                        <i class="fa-solid fa-layer-group" style="color: #10b981;"></i>
+                        <span>Kategorie Towarów</span>
+                    </div>
 
-            <div class="products-grid" id="catalogProductsGrid"></div>
+                    <div class="nordic-sidebar-quick-filters">
+                        <button type="button" class="nordic-sidebar-btn active" id="nordicFilterAllBtn" onclick="selectCategory('Wszystkie')">
+                            <span class="btn-label"><i class="fa-solid fa-boxes-stacked"></i> Wszystkie Towary</span>
+                            <span class="nordic-count-badge" id="nordicCountAll">0</span>
+                        </button>
+                    </div>
+
+                    <div class="nordic-sidebar-list" id="nordicSidebarList">
+                        <!-- Dynamicznie generowane kategorie z licznikami towarów -->
+                    </div>
+                </aside>
+
+                <!-- PRAWY GŁÓWNY OBSZAR Z TOWARAMI -->
+                <div class="nordic-main-content">
+                    <div class="search-category-row" style="display: flex; gap: 10px; align-items: stretch; margin-bottom: 12px;">
+                        <div class="search-wrapper" style="flex: 1; margin-bottom: 0;">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="catalogSearchInput" class="search-input" placeholder="Wyszukaj po nazwie towaru, EAN lub SKU...">
+                        </div>
+                        <button type="button" id="openCategoryDrawerBtn" class="mobile-only-btn" onclick="openCategoryDrawer()" style="background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(5,150,105,0.25)); border: 1px solid rgba(16,185,129,0.45); color: #34d399; font-weight: 700; font-size: 13px; padding: 0 16px; border-radius: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; white-space: nowrap; transition: all 0.2s;" title="Otwórz pełną listę kategorii">
+                            <i class="fa-solid fa-bars-staggered"></i> <span class="hide-on-mobile">Kategorie</span>
+                            <span id="drawerTotalCatsBadge" style="background: rgba(16,185,129,0.3); color: #fff; padding: 2px 7px; border-radius: 10px; font-size: 11px; font-weight: 800;">38</span>
+                        </button>
+                    </div>
+
+                    <!-- MOBILNY POZIOMY PASEK KATEGORII (TYLKO NA TELEFONACH) -->
+                    <div class="categories-bar mobile-only-bar" id="categoriesBar">
+                        <!-- Generowane dynamicznie w app.js -->
+                    </div>
+                    
+                    <div class="subcategories-bar" id="subCategoriesBar" style="display: none;">
+                        <!-- Generowane dynamicznie w app.js na podstawie wybranej kategorii -->
+                    </div>
+
+                    <div class="catalog-active-header" id="catalogActiveHeader" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
+                        <h2 id="currentCategoryTitle" style="font-size: 18px; font-weight: 800; margin: 0; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-boxes-packing" style="color: #10b981;"></i> Wszystkie Towary
+                        </h2>
+                        <span id="activeProductsCount" style="font-size: 13px; color: var(--text-muted); font-weight: 600;">(0 produktów)</span>
+                    </div>
+
+                    <div class="products-grid" id="catalogProductsGrid"></div>
+                </div>
+            </div>
         </section>
 
     </div>
