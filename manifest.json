@@ -1,7 +1,7 @@
 {
-  "name": "Katalog Produktów B2B",
-  "short_name": "Katalog B2B",
-  "description": "Katalog hurtowy i detaliczny z możliwością składania zamówień online",
+  "name": "dystrybut.pl - Hurtownia FMCG & Dystrybucja B2B",
+  "short_name": "dystrybut.pl",
+  "description": "Ogólnopolska Hurtownia FMCG & Dystrybucja B2B z zamówieniami online",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0d0f1b",
